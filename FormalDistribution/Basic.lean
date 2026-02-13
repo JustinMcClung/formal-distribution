@@ -393,6 +393,23 @@ instance : Add (FormalDistribution A n) where
       · right; simp at ha'; simp [ha'] at hne; exact hne
   ⟩
 
+/-- Negation of formal distributions. -/
+instance : Neg (FormalDistribution A n) where
+  neg a := ⟨fun idx => -a.coeff idx, by
+    apply Set.Finite.subset a.support_finite
+    intro idx hne; simp at hne ⊢; exact hne⟩
+
+/-- Subtraction of formal distributions. -/
+instance : Sub (FormalDistribution A n) where
+  sub a b := ⟨
+    fun idx => a.coeff idx - b.coeff idx,
+    by
+      apply Set.Finite.subset (Set.Finite.union a.support_finite b.support_finite)
+      intro idx hne
+      by_cases ha' : a.coeff idx ≠ 0
+      · left; exact ha'
+      · right; simp at ha'; simp [ha'] at hne; exact hne⟩
+
 /-- Scalar multiplication of formal distributions. -/
 instance : SMul A (FormalDistribution A n) where
   smul c a := ⟨
@@ -405,6 +422,20 @@ instance : SMul A (FormalDistribution A n) where
       · simp [hc] at hne
       · exact fun h => hne (by simp [h])
   ⟩
+
+/-- Natural number scalar multiplication on formal distributions. -/
+instance : SMul ℕ (FormalDistribution A n) where
+  smul k a := ⟨fun idx => k • a.coeff idx, by
+    apply Set.Finite.subset a.support_finite
+    intro idx hne; simp only [Set.mem_setOf_eq] at hne ⊢
+    intro h; apply hne; simp [h]⟩
+
+/-- Integer scalar multiplication on formal distributions. -/
+instance : SMul ℤ (FormalDistribution A n) where
+  smul k a := ⟨fun idx => k • a.coeff idx, by
+    apply Set.Finite.subset a.support_finite
+    intro idx hne; simp only [Set.mem_setOf_eq] at hne ⊢
+    intro h; apply hne; simp [h]⟩
 
 /-! ### Support properties -/
 

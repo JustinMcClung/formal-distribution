@@ -175,3 +175,21 @@ theorem Int.extChoose_eq_intBinomial (j : ℤ) (n : ℕ) :
 /-- Extended binomial agrees with `Nat.choose` for non-negative arguments. -/
 theorem Int.extChoose_nonneg (k n : ℕ) : Int.extChoose (↑k : ℤ) n = (↑(Nat.choose k n) : ℚ) := by
   rw [Int.extChoose_eq_intBinomial]; simp [intBinomial]
+
+/-- `intBinomial 0 (n+1) = 0`. -/
+@[simp]
+theorem intBinomial_zero_left (n : ℕ) : intBinomial 0 (n + 1) = 0 := by
+  simp [intBinomial]
+
+/-- Pascal's rule for generalized binomial coefficients:
+`C(k+1, n+1) = C(k, n) + C(k, n+1)`. -/
+theorem intBinomial_pascal (k : ℤ) (n : ℕ) :
+    intBinomial (k + 1) (n + 1) = intBinomial k n + intBinomial k (n + 1) := by
+  have h_ne : (↑(n + 1) : ℤ) ≠ 0 := by exact_mod_cast Nat.succ_ne_zero n
+  apply mul_left_cancel₀ h_ne
+  rw [mul_add]
+  have lhs := intBinomial_succ_mul_eq (k + 1) n
+  rw [show k + 1 - 1 = k from by omega] at lhs
+  have rhs2 := intBinomial_succ_mul_eq k n
+  rw [lhs, rhs2, ← intBinomial_mul_sub k n]
+  push_cast; ring

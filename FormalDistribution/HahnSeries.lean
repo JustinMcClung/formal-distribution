@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 import FormalDistribution.Mul
 import Mathlib.RingTheory.HahnSeries.Addition
 import Mathlib.RingTheory.HahnSeries.Multiplication
+import Mathlib.Algebra.Ring.InjSurj
 
 /-!
 # Compatibility with Hahn Series
@@ -22,6 +23,7 @@ in `Mathlib.Algebra.Vertex.VertexOperator`.
 
 * `toHahnSeries_add` - preserves addition
 * `toHahnSeries_mul` - preserves the Cauchy product
+* `CommRing (FormalDist1 R)` - full commutative ring structure via `Function.Injective.commRing`
 * `toHahnSeries_ofHahnSeries` - round-trip identity (Hahn → Dist → Hahn)
 * `ofHahnSeries_toHahnSeries` - round-trip identity (Dist → Hahn → Dist)
 
@@ -124,6 +126,126 @@ theorem toHahnSeries_mul (a b : FormalDist1 R) :
     exact Prod.ext rfl (show n - ij.fst = ij.snd by omega)
   · -- Summands agree
     intro k _; rfl
+
+/-- `toHahnSeries` preserves negation. -/
+theorem toHahnSeries_neg (a : FormalDist1 R) :
+    (-a).toHahnSeries = -a.toHahnSeries := by
+  ext n; rfl
+
+/-- `toHahnSeries` preserves subtraction. -/
+theorem toHahnSeries_sub (a b : FormalDist1 R) :
+    (a - b).toHahnSeries = a.toHahnSeries - b.toHahnSeries := by
+  ext n; rfl
+
+/-- `toHahnSeries` preserves natural number scalar multiplication. -/
+theorem toHahnSeries_nsmul (k : ℕ) (a : FormalDist1 R) :
+    (k • a).toHahnSeries = k • a.toHahnSeries := by
+  ext n; rfl
+
+/-- `toHahnSeries` preserves integer scalar multiplication. -/
+theorem toHahnSeries_zsmul (k : ℤ) (a : FormalDist1 R) :
+    (k • a).toHahnSeries = k • a.toHahnSeries := by
+  ext n; rfl
+
+/-- `toHahnSeries` is injective. -/
+theorem toHahnSeries_injective : Function.Injective (toHahnSeries : FormalDist1 R → HahnSeries ℤ R) := by
+  intro a b hab
+  ext idx
+  have h : (toHahnSeries a).coeff (idx 0) = (toHahnSeries b).coeff (idx 0) := by rw [hab]
+  simp only [toHahnSeries_coeff] at h
+  convert h using 1 <;> congr 1 <;> funext i <;> fin_cases i <;> rfl
+
+/-! ### Additional instances for CommRing transfer -/
+
+/-- Auxiliary recursive definition for natural number power. -/
+private noncomputable def npow (a : FormalDist1 R) : ℕ → FormalDist1 R
+  | 0 => 1
+  | n + 1 => a * npow a n
+
+/-- Natural number power via iterated multiplication. -/
+noncomputable instance : Pow (FormalDist1 R) ℕ where
+  pow := npow
+
+/-- `toHahnSeries` preserves natural number powers. -/
+theorem toHahnSeries_pow (a : FormalDist1 R) (n : ℕ) :
+    (a ^ n).toHahnSeries = a.toHahnSeries ^ n := by
+  induction n with
+  | zero => exact toHahnSeries_one
+  | succ n ih =>
+    show (a * a ^ n).toHahnSeries = a.toHahnSeries ^ (n + 1)
+    rw [toHahnSeries_mul, ih, pow_succ, mul_comm]
+
+/-- Natural number cast into 1D formal distributions. -/
+noncomputable instance : NatCast (FormalDist1 R) where
+  natCast n := ⟨fun idx => if idx 0 = 0 then (n : R) else 0, by
+    apply (Set.finite_singleton (fun _ : Fin 1 => (0 : ℤ))).subset
+    intro idx hidx
+    simp only [Set.mem_setOf_eq] at hidx
+    simp only [Set.mem_singleton_iff]
+    split_ifs at hidx with h
+    · funext i; fin_cases i; exact h
+    · exact absurd rfl hidx⟩
+
+/-- Integer cast into 1D formal distributions. -/
+noncomputable instance : IntCast (FormalDist1 R) where
+  intCast n := ⟨fun idx => if idx 0 = 0 then (n : R) else 0, by
+    apply (Set.finite_singleton (fun _ : Fin 1 => (0 : ℤ))).subset
+    intro idx hidx
+    simp only [Set.mem_setOf_eq] at hidx
+    simp only [Set.mem_singleton_iff]
+    split_ifs at hidx with h
+    · funext i; fin_cases i; exact h
+    · exact absurd rfl hidx⟩
+
+/-- Coefficient formula for natural number casts in `HahnSeries ℤ R`. -/
+private lemma hahnSeries_natCast_coeff (n : ℕ) (k : ℤ) :
+    ((n : HahnSeries ℤ R)).coeff k = if k = 0 then (n : R) else 0 := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Nat.cast_succ, HahnSeries.coeff_add, ih, HahnSeries.coeff_one]
+    by_cases h : k = 0
+    · simp [h, Nat.cast_succ]
+    · simp [h]
+
+/-- `toHahnSeries` preserves natural number casts. -/
+theorem toHahnSeries_natCast (n : ℕ) :
+    toHahnSeries (n : FormalDist1 R) = (n : HahnSeries ℤ R) := by
+  ext k
+  simp only [toHahnSeries_coeff]
+  change (if k = 0 then (n : R) else 0) = _
+  rw [hahnSeries_natCast_coeff]
+
+/-- `toHahnSeries` preserves integer casts. -/
+theorem toHahnSeries_intCast (n : ℤ) :
+    toHahnSeries (n : FormalDist1 R) = (n : HahnSeries ℤ R) := by
+  ext k
+  simp only [toHahnSeries_coeff]
+  change (if k = 0 then (n : R) else 0) = _
+  cases n with
+  | ofNat m =>
+    simp only [Int.ofNat_eq_natCast, Int.cast_natCast]
+    rw [hahnSeries_natCast_coeff]
+  | negSucc m =>
+    simp only [Int.cast_negSucc]
+    rw [show (-((↑(m + 1) : ℕ) : HahnSeries ℤ R)).coeff k =
+            -((↑(m + 1) : ℕ) : HahnSeries ℤ R).coeff k from rfl,
+        hahnSeries_natCast_coeff]
+    by_cases h : k = 0 <;> simp [h]
+
+/-! ### CommRing instance -/
+
+/-- `FormalDist1 R` forms a commutative ring, transferred from `HahnSeries ℤ R`
+via the injective map `toHahnSeries`.
+
+This gives `FormalDist1 R` the full `CommRing` structure including associativity
+and commutativity of multiplication, which would be difficult to prove directly
+from the Cauchy product definition. -/
+noncomputable instance : CommRing (FormalDist1 R) :=
+  toHahnSeries_injective.commRing toHahnSeries
+    toHahnSeries_zero toHahnSeries_one toHahnSeries_add toHahnSeries_mul
+    toHahnSeries_neg toHahnSeries_sub toHahnSeries_nsmul toHahnSeries_zsmul
+    toHahnSeries_pow toHahnSeries_natCast toHahnSeries_intCast
 
 /-! ### Support and round-trip lemmas -/
 

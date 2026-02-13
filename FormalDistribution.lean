@@ -10,6 +10,7 @@ import FormalDistribution.Binomial
 import FormalDistribution.Expansion
 import FormalDistribution.Delta
 import FormalDistribution.HahnSeries
+import FormalDistribution.Decomposition
 
 /-!
 # Formal Distributions
@@ -27,6 +28,7 @@ Chapter 1 (Formal Calculus) from Nozaradan's "Introduction to Vertex Algebras."
 * `Expansion` - Expansion operators `i_{z,w}`, `i_{w,z}`
 * `Delta` - Formal delta distribution and its seven properties
 * `HahnSeries` - Compatibility with Mathlib's HahnSeries
+* `Decomposition` - Proposition 1.3.6: decomposition theorem for distributions annihilated by (z-w)^N
 
 ## References
 

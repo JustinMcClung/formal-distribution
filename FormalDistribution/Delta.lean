@@ -322,15 +322,31 @@ theorem smul_mul_z_sub_w_pow (m : ℕ) (c : A) (a : GenFormalDist2 A) :
          c • mul_z_sub_w (mul_z_sub_w_pow a m)
     rw [ihm, mul_z_sub_w_smul]
 
-/-- Property 3 (symmetry): the formal delta is definitionally symmetric.
+/-- Swap the two variables of a 2-variable generalized distribution: `a(z,w) ↦ a(w,z)`. -/
+noncomputable def swap2 (a : GenFormalDist2 A) : GenFormalDist2 A where
+  coeff idx := a.coeff (fun i : Fin 2 => if i = 0 then idx 1 else idx 0)
+  support_finite bound := by
+    have ha := a.support_finite (fun i : Fin 2 => if i = 0 then bound 1 else bound 0)
+    apply (ha.image (fun f : Fin 2 → ℤ => fun i : Fin 2 => if i = 0 then f 1 else f 0)).subset
+    intro idx ⟨hge, hne⟩
+    refine ⟨fun i : Fin 2 => if i = 0 then idx 1 else idx 0, ⟨fun i => ?_, hne⟩, ?_⟩
+    · fin_cases i <;> simp <;> [exact hge 1; exact hge 0]
+    · funext i; fin_cases i <;> simp
 
-The coefficient condition `idx 0 + idx 1 + 1 = 0` is invariant under swapping `idx 0` and
-`idx 1` (by commutativity of addition), so the definition treats both variables identically.
+/-- Property 3 (symmetry): `δ(z,w) = δ(w,z)`.
+
+Swapping the two variables of the formal delta yields the same distribution,
+because the support condition `n + m + 1 = 0` is symmetric.
 
 ## References
 * [Nozaradan, *Introduction to Vertex Algebras*], Proposition 1.3.5(3)
 -/
-theorem formalDelta_symm : @formalDelta A _ = @formalDelta A _ := by rfl
+theorem formalDelta_swap : swap2 (formalDelta : GenFormalDist2 A) = formalDelta := by
+  ext idx
+  change (if idx 1 + idx 0 + 1 = 0 then (1 : A) else 0) =
+         if idx 0 + idx 1 + 1 = 0 then 1 else 0
+  have h : idx 1 + idx 0 + 1 = idx 0 + idx 1 + 1 := by omega
+  rw [h]
 
 /-- Property 4: `∂_z δ(z,w) + ∂_w δ(z,w) = 0`.
 

@@ -1,8 +1,8 @@
 # Formalization Status: Nozaradan Chapter 1 -- Formal Calculus
 
-**8 modules** under `FormalDistribution/` | **2950 lines** | **0 errors | 0 sorry | 0 axioms**
+**9 modules** under `FormalDistribution/` | **3335 lines** | **0 errors | 0 sorry | 0 axioms**
 
-Everything below is fully proved and compiles cleanly with `lake build` (1395 jobs).
+Everything below is fully proved and compiles cleanly with `lake build` (1396 jobs).
 
 ---
 
@@ -33,13 +33,13 @@ Everything below is fully proved and compiles cleanly with `lake build` (1395 jo
 - `Zero`, `Add`, `Neg`, `Sub`, `SMul A`
 
 ### `FormalDistribution A n`
-- `Zero`, `Add`, `SMul A`
+- `Zero`, `Add`, `Neg`, `Sub`, `SMul A`
 
 ### `FormalDist1 A` (`[Ring A]`)
 - `Mul` (Cauchy product)
 
 ### `FormalDist1 A` (`[CommRing A]`)
-- `One`
+- `One`, `CommRing` (via HahnSeries bridge)
 
 ### `FormalDist2 A` (`[CommRing A]`)
 - `Mul` (2D Cauchy product)
@@ -132,7 +132,7 @@ Everything below is fully proved and compiles cleanly with `lake build` (1395 jo
 |---|---------|-----------|--------|
 | 1 | `mul_z_sub_w_pow_succ_iteratedDeriv_formalDelta_eq_zero` | `(z-w)^{n+1} d_w^n delta = 0` | Delta |
 | 2 | `mul_z_sub_w_iteratedDeriv_formalDelta` | `(z-w) d_w^n delta = n * d_w^{n-1} delta` for n >= 1 | Delta |
-| 3 | `formalDelta_symm` | Symmetry (definitional; coefficient condition is symmetric by `rfl`) | Delta |
+| 3 | `formalDelta_swap` | `delta(z,w).swap = delta(z,w)` (variable-swap symmetry) | Delta |
 | 4 | `deriv_fst_formalDelta_add_deriv_snd_formalDelta` | `d_z delta + d_w delta = 0` | Delta |
 | 5 | `embedFst_mulGen_formalDelta_eq_embedSnd` | `a(z) delta = a(w) delta` | Delta |
 | 6 | `residueAt_embedFst_mulGen_formalDelta` | `Res_z a(z) delta = a(w)` | Delta |
@@ -141,6 +141,28 @@ Everything below is fully proved and compiles cleanly with `lake build` (1395 jo
 Property 7 is the falling factorial identity that generalizes Properties 1 and 2:
 - j = n+1 recovers Property 1 (since n\_(n+1) = 0)
 - j = 1 recovers Property 2 (since n\_1 = n)
+
+### Proposition 1.3.6 -- Decomposition Theorem
+
+| Theorem | Statement | Module |
+|---------|-----------|--------|
+| `antidiag_const_of_mul_z_sub_w_zero` | `(z-w)f = 0` implies `f(p,q) = f(-1, p+q+1)` | Decomposition |
+| `decomposition_theorem` | `(z-w)^N f = 0` implies `f(p,q) = ∑_{j<N} C(-p-1,j) · c_j(p+q+j+1)` | Decomposition |
+
+The decomposition is formulated at the coefficient level using generalized binomial
+coefficients, avoiding division by factorials (no `[Algebra ℚ A]` required).
+
+## Theorems -- Generalized Binomial Coefficients
+
+| Theorem | Statement | Module |
+|---------|-----------|--------|
+| `intBinomial_zero` | `C(k, 0) = 1` | Binomial |
+| `intBinomial_neg_one` | `C(-1, n) = (-1)^n` | Binomial |
+| `intBinomial_zero_left` | `C(0, n+1) = 0` | Binomial |
+| `intBinomial_pascal` | `C(k+1, n+1) = C(k, n) + C(k, n+1)` | Binomial |
+| `intBinomial_mul_sub` | `(k-n) C(k,n) = k C(k-1,n)` | Binomial |
+| `intBinomial_succ_mul_eq` | `(n+1) C(k,n+1) = k C(k-1,n)` | Binomial |
+| `Int.extChoose_eq_intBinomial` | `extChoose j n = intBinomial j n` (cast to ℚ) | Binomial |
 
 ## Theorems -- Hahn Series Bridge
 
@@ -186,13 +208,12 @@ Intentionally omitted from Chapter 1:
 - **Proposition 1.2.3** (expansion formulas via power series evaluation) -- requires topological/analytic machinery
 - **Proposition 1.2.5** (uniqueness of expansion) -- same dependency
 - **Definition 1.3.3** (alternative delta via limits) -- not needed; Prop 1.3.4 proved directly
-- **Proposition 1.3.6** (decomposition theorem) -- requires formal Laurent series machinery
 
 ## Verification
 
 ```bash
 lake build
-# Build completed successfully (1395 jobs).
+# Build completed successfully (1396 jobs).
 
 grep -rn "sorry\|axiom\|admit" FormalDistribution/
 # (No output)
