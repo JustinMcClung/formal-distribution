@@ -11,6 +11,8 @@ import FormalDistribution.Expansion
 import FormalDistribution.Delta
 import FormalDistribution.HahnSeries
 import FormalDistribution.Decomposition
+import FormalDistribution.Locality
+import FormalDistribution.FourierTransform
 
 /-!
 # Formal Distributions
@@ -28,7 +30,9 @@ Chapter 1 (Formal Calculus) from Nozaradan's "Introduction to Vertex Algebras."
 * `Expansion` - Expansion operators `i_{z,w}`, `i_{w,z}`
 * `Delta` - Formal delta distribution and its seven properties
 * `HahnSeries` - Compatibility with Mathlib's HahnSeries
-* `Decomposition` - Proposition 1.3.6: decomposition theorem for distributions annihilated by (z-w)^N
+* `Decomposition` - Proposition 1.3.6: decomposition theorem
+* `Locality` - Section 1.4: mutual locality, commutator, derivative stability
+* `FourierTransform` - Section 1.5: Fourier transform, j-th product, lambda-bracket
 
 ## References
 

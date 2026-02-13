@@ -92,6 +92,7 @@ theorem antidiag_const_of_mul_z_sub_w_zero (f : GenFormalDist2 A) (hf : mul_z_su
 
 /-! ### Antidiagonal constancy for functions -/
 
+omit [Ring A] in
 /-- If a function `D : ℤ → ℤ → A` satisfies `D(p,q) = D(p+1, q-1)` for all `p, q`,
 then `D(p,q) = D(-1, p+q+1)`. -/
 private lemma antidiag_const_fun (D : ℤ → ℤ → A)

@@ -1,8 +1,8 @@
 # Formalization Status: Nozaradan Chapter 1 -- Formal Calculus
 
-**9 modules** under `FormalDistribution/` | **3335 lines** | **0 errors | 0 sorry | 0 axioms**
+**11 modules** under `FormalDistribution/` | **3887 lines** | **0 errors | 0 sorry | 0 axioms**
 
-Everything below is fully proved and compiles cleanly with `lake build` (1396 jobs).
+Everything below is fully proved and compiles cleanly with `lake build` (1398 jobs).
 
 ---
 
@@ -18,6 +18,10 @@ Everything below is fully proved and compiles cleanly with `lake build` (1396 jo
 | 6 | Def 1.2.1 | `expansion_izw k`, `expansion_iwz k` | Expansion |
 | 7 | Def 1.2.2 | `Int.extChoose j n` | Binomial |
 | 8 | Def 1.3.1 | `formalDelta` | Delta |
+| 9 | Def 1.4.1 | `IsLocal`, `IsLocalOfOrder`, `MutuallyLocal` | Locality |
+| 10 | Rem 1.4.4 | `nthProduct` (j-th product) | Locality |
+| 11 | Def 1.5.1 | `fourierTransformCoeff` | FourierTransform |
+| 12 | Def 1.5.3 | `twoVarFourierCoeff` | FourierTransform |
 
 ## Type Aliases
 
@@ -25,6 +29,7 @@ Everything below is fully proved and compiles cleanly with `lake build` (1396 jo
 |-------|-----------|--------|
 | `FormalDist1 A` | `FormalDistribution A 1` | Basic |
 | `FormalDist2 A` | `FormalDistribution A 2` | Basic |
+| `GenFormalDist1 A` | `GeneralizedFormalDistribution A 1` | Basic |
 | `GenFormalDist2 A` | `GeneralizedFormalDistribution A 2` | Basic |
 
 ## Algebraic Instances
@@ -118,6 +123,12 @@ Everything below is fully proved and compiles cleanly with `lake build` (1396 jo
 | `deriv_fst_expansion_iwz` | `d_z i_{w,z}(z-w)^k = k * i_{w,z}(z-w)^{k-1}` | Expansion |
 | `deriv_snd_expansion_iwz` | `d_w i_{w,z}(z-w)^k = -k * i_{w,z}(z-w)^{k-1}` | Expansion |
 
+### Remark 1.2.4
+
+| Theorem | Statement | Module |
+|---------|-----------|--------|
+| `expansion_izw_eq_iwz_of_nonneg` | `i_{z,w}(z-w)^k = i_{w,z}(z-w)^k` for `k ≥ 0` | Expansion |
+
 ## Theorems -- Formal Delta
 
 ### Proposition 1.3.4
@@ -201,19 +212,75 @@ coefficients, avoiding division by factorials (no `[Algebra ℚ A]` required).
 |------|-------------|--------|
 | `iteratedDeriv_snd_formalDelta_coeff` | Explicit coefficient formula for d_w^n delta | Delta |
 
+## Theorems -- Locality (Section 1.4)
+
+### Infrastructure
+
+| Name | Description | Module |
+|------|-------------|--------|
+| `externalProduct` | Tensor product `a(z)b(w)` of two 1D distributions | Locality |
+| `formalCommutator` | Commutator `[a(z), b(w)] = a(z)b(w) - b(w)a(z)` | Locality |
+| `nthProduct` | j-th product `a_{(j)} b = Res_z (z-w)^j [a(z), b(w)]` | Locality |
+
+### Example 1.4.2
+
+| Theorem | Statement | Module |
+|---------|-----------|--------|
+| `formalDelta_isLocal` | `delta` is local with `N = 1` | Locality |
+| `iteratedDeriv_formalDelta_isLocal` | `d^n delta` is local with `N = n + 1` | Locality |
+
+### Derivative Stability
+
+| Theorem | Statement | Module |
+|---------|-----------|--------|
+| `isLocal_deriv_snd` | If `f` is local of order `N`, then `d_w f` is local of order `N + 1` | Locality |
+
+### CommRing Locality
+
+| Theorem | Statement | Module |
+|---------|-----------|--------|
+| `formalCommutator_eq_zero` | `[a, b] = 0` when `A` is a `CommRing` | Locality |
+| `commRing_mutuallyLocal` | All pairs are mutually local over `CommRing` | Locality |
+
+### Theorem 1.4.3 -- Decomposition for Local Distributions
+
+| Theorem | Statement | Module |
+|---------|-----------|--------|
+| `local_decomposition` | If `[a,b]` is local of order `N`, then `[a(z),b(w)] = ∑_{j<N} c_j(w) ∂^j_w δ(z,w)` | Locality |
+| `mul_z_sub_w_pow_zero_of_ge` | `(z-w)^N f = 0` and `j ≥ N` implies `(z-w)^j f = 0` | Locality |
+| `nthProduct_eq_zero_of_local` | `a_{(j)} b = 0` for `j ≥ N` when `[a,b]` is local of order `N` | Locality |
+
+## Theorems -- Fourier Transform (Section 1.5)
+
+### One-Variable (Definition 1.5.1, Proposition 1.5.2)
+
+| Theorem | Statement | Module |
+|---------|-----------|--------|
+| `fourierTransformCoeff_deriv_zero` | `F(∂a)_0 = 0` | FourierTransform |
+| `fourierTransformCoeff_deriv` | `F(∂a)_n = -F(a)_{n-1}` for `n ≥ 1` | FourierTransform |
+
+### Two-Variable (Definition 1.5.3, Proposition 1.5.4)
+
+| Theorem | Statement | Module |
+|---------|-----------|--------|
+| `twoVarFourierCoeff_commutator_eq` | `F_{z,w}^λ([a,b])_j = (1/j!) · a_{(j)} b` | FourierTransform |
+| `twoVarFourierCoeff_eq_zero_of_local` | Lambda-bracket is polynomial for local distributions | FourierTransform |
+
 ## Not Formalized
 
 Intentionally omitted from Chapter 1:
 
-- **Proposition 1.2.3** (expansion formulas via power series evaluation) -- requires topological/analytic machinery
-- **Proposition 1.2.5** (uniqueness of expansion) -- same dependency
+- **Proposition 1.2.3** (expansion formulas via power series evaluation) -- requires topological/analytic machinery beyond the algebraic scope
+- **Proposition 1.2.5** (uniqueness of expansion) -- depends on 1.2.3
 - **Definition 1.3.3** (alternative delta via limits) -- not needed; Prop 1.3.4 proved directly
+
+All other definitions, propositions, theorems, remarks, and examples from Sections 1.1--1.5 are formalized.
 
 ## Verification
 
 ```bash
 lake build
-# Build completed successfully (1396 jobs).
+# Build completed successfully (1398 jobs).
 
 grep -rn "sorry\|axiom\|admit" FormalDistribution/
 # (No output)

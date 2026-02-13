@@ -1,6 +1,6 @@
 # FormalDistribution -- Lean 4 Formalization of Formal Calculus
 
-An axiom-free Lean 4 formalization covering most of **Section 1: Formal Calculus** from
+An axiom-free Lean 4 formalization of **Chapter 1: Formal Calculus** from
 Nozaradan's *Introduction to Vertex Algebras*, structured as a mathlib-compatible library
 with a bridge to `Mathlib.RingTheory.HahnSeries`.
 
@@ -14,26 +14,28 @@ Requires Lean 4 (v4.28.0-rc1) with Mathlib.
 
 ```bash
 lake exe cache get   # fetch Mathlib oleans
-lake build           # 1396 jobs, 0 errors
+lake build           # 1398 jobs, 0 errors
 ```
 
 ## File Structure
 
 ```
-FormalDistribution.lean              -- root re-export
+FormalDistribution.lean                 -- root re-export
 FormalDistribution/
-  Basic.lean          (462 lines)    -- core types, Zero/Add/Neg/Sub/SMul instances
-  Deriv.lean          (181 lines)    -- formal derivatives
-  Mul.lean            (955 lines)    -- 1D/2D multiplication, ring axioms
-  Fourier.lean        (231 lines)    -- Fourier expansion, modes, residue
-  Binomial.lean       (195 lines)    -- extended/generalized binomial coefficients
-  Expansion.lean      (251 lines)    -- expansion operators i_{z,w}, i_{w,z}
-  Delta.lean          (559 lines)    -- formal delta, all 7 properties, swap symmetry
-  HahnSeries.lean     (271 lines)   -- bridge to Mathlib HahnSeries, CommRing instance
-  Decomposition.lean  (230 lines)   -- Proposition 1.3.6: decomposition theorem
+  Basic.lean            (462 lines)     -- core types, Zero/Add/Neg/Sub/SMul instances
+  Deriv.lean            (181 lines)     -- formal derivatives
+  Mul.lean              (955 lines)     -- 1D/2D multiplication, ring axioms
+  Fourier.lean          (231 lines)     -- Fourier expansion, modes, residue
+  Binomial.lean         (195 lines)     -- extended/generalized binomial coefficients
+  Expansion.lean        (298 lines)     -- expansion operators i_{z,w}, i_{w,z}, Remark 1.2.4
+  Delta.lean            (559 lines)     -- formal delta, all 7 properties, swap symmetry
+  HahnSeries.lean       (271 lines)    -- bridge to Mathlib HahnSeries, CommRing instance
+  Decomposition.lean    (231 lines)    -- Proposition 1.3.6: decomposition theorem
+  Locality.lean         (324 lines)    -- Section 1.4: locality, commutator, j-th product
+  FourierTransform.lean (139 lines)    -- Section 1.5: Fourier transform, lambda-bracket
 ```
 
-**3335 lines total. 0 axioms. 0 sorry. 0 admits.**
+**3887 lines total. 0 axioms. 0 sorry. 0 admits.**
 
 ## Mathematical Content
 
@@ -52,6 +54,7 @@ FormalDistribution/
 - `Int.extChoose` -- extended binomial coefficient for integers
 - `intBinomial` -- integer-valued generalized binomial with Pascal's rule
 - `expansion_izw`, `expansion_iwz` -- expansion operators
+- Remark 1.2.4: `expansion_izw_eq_iwz_of_nonneg` -- both operators agree for non-negative exponents
 
 ### Section 1.3 -- Formal Delta
 
@@ -67,6 +70,26 @@ FormalDistribution/
   7. `mul_z_sub_w_pow_iteratedDeriv_formalDelta` -- falling factorial identity
 - Proposition 1.3.6: `decomposition_theorem` -- if (z-w)^N f = 0 then f decomposes as
   a finite sum involving generalized binomial coefficients (no `[Algebra ℚ A]` needed)
+
+### Section 1.4 -- Locality
+
+- `externalProduct` -- tensor product a(z)b(w) of two 1D distributions
+- `formalCommutator` -- commutator [a(z), b(w)] = a(z)b(w) - b(w)a(z)
+- `IsLocal`, `IsLocalOfOrder`, `MutuallyLocal` -- locality definitions (Definition 1.4.1)
+- `formalDelta_isLocal` -- delta is local with N = 1 (Example 1.4.2)
+- `iteratedDeriv_formalDelta_isLocal` -- d^n delta is local with N = n + 1 (Example 1.4.2)
+- `isLocal_deriv_snd` -- derivatives of local distributions are local
+- `commRing_mutuallyLocal` -- all pairs are mutually local over CommRing
+- `nthProduct` -- j-th product a_{(j)} b (Remark 1.4.4)
+- `local_decomposition` -- decomposition for local distributions (Theorem 1.4.3)
+
+### Section 1.5 -- Fourier Transform
+
+- `fourierTransformCoeff` -- n-th coefficient (1/n!)·a_n of F_z^λ(a) (Definition 1.5.1)
+- `fourierTransformCoeff_deriv` -- F(∂a)_n = -F(a)_{n-1} (Proposition 1.5.2)
+- `twoVarFourierCoeff` -- j-th coefficient of two-variable FT (Definition 1.5.3)
+- `twoVarFourierCoeff_commutator_eq` -- lambda-bracket = (1/j!)·a_{(j)}b (Proposition 1.5.4)
+- `twoVarFourierCoeff_eq_zero_of_local` -- lambda-bracket is polynomial for local distributions
 
 ### Hahn Series Bridge
 

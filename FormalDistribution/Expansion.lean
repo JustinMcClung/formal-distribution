@@ -249,3 +249,50 @@ theorem deriv_snd_expansion_iwz (k : ℤ) :
       _ = -k * (intBinomial (k - 1) (idx 0).toNat * (-1) ^ ((k - 1) - idx 0).natAbs) := by ring
   · rw [if_neg (by omega : ¬(idx 0 + (idx 1 + 1) = k ∧ idx 0 ≥ 0)), if_neg hcond]
     simp [smul_zero]
+
+/-! ### Remark 1.2.4: Expansion equality for non-negative exponents -/
+
+/-- Remark 1.2.4: For non-negative `k`, both expansion operators agree.
+
+When `k ≥ 0`, `(z-w)^k` is a polynomial and both `i_{z,w}` and `i_{w,z}` produce
+the same finite expansion. -/
+theorem expansion_izw_eq_iwz_of_nonneg (k : ℕ) :
+    (expansion_izw (↑k : ℤ) : GenFormalDist2 A) = expansion_iwz ↑k := by
+  ext idx
+  simp only [expansion_izw_coeff, expansion_iwz_coeff]
+  -- If the indices don't sum to k, both sides are zero
+  by_cases hsum : idx 0 + idx 1 = ↑k
+  · -- On the diagonal n + m = k
+    by_cases hm : idx 1 ≥ 0
+    · by_cases hn : idx 0 ≥ 0
+      · -- Both non-negative: compare using Nat.choose symmetry
+        rw [if_pos ⟨hsum, hm⟩, if_pos ⟨hsum, hn⟩]
+        have h_sign : (↑k - idx 0).natAbs = (idx 1).toNat := by omega
+        rw [h_sign]
+        congr 1
+        -- intBinomial ↑k m = ↑(Nat.choose k m) for natural k
+        have h1 : intBinomial (↑k) (idx 1).toNat = ↑(Nat.choose k (idx 1).toNat) := rfl
+        have h2 : intBinomial (↑k) (idx 0).toNat = ↑(Nat.choose k (idx 0).toNat) := rfl
+        rw [h1, h2]
+        congr 1
+        have hsym := Nat.choose_symm (show (idx 1).toNat ≤ k by omega)
+        rw [show k - (idx 1).toNat = (idx 0).toNat from by omega] at hsym
+        exact_mod_cast hsym.symm
+      · -- idx 0 < 0, so idx 1 > k: Nat.choose k m = 0 for m > k
+        push_neg at hn
+        rw [if_pos ⟨hsum, hm⟩, if_neg (by intro ⟨_, h⟩; exact absurd h (by omega))]
+        have h1 : intBinomial (↑k) (idx 1).toNat = ↑(Nat.choose k (idx 1).toNat) := rfl
+        rw [h1, Nat.choose_eq_zero_of_lt (by omega : k < (idx 1).toNat)]
+        simp
+    · push_neg at hm
+      by_cases hn : idx 0 ≥ 0
+      · -- idx 1 < 0, so idx 0 > k: Nat.choose k n = 0 for n > k
+        rw [if_neg (by intro ⟨_, h⟩; exact absurd h (by omega)), if_pos ⟨hsum, hn⟩]
+        have h2 : intBinomial (↑k) (idx 0).toNat = ↑(Nat.choose k (idx 0).toNat) := rfl
+        rw [h2, Nat.choose_eq_zero_of_lt (by omega : k < (idx 0).toNat)]
+        simp
+      · -- Both negative: impossible since sum = k ≥ 0
+        push_neg at hn; omega
+  · -- Off diagonal: both zero
+    rw [if_neg (by intro ⟨h, _⟩; exact hsum h),
+        if_neg (by intro ⟨h, _⟩; exact hsum h)]
