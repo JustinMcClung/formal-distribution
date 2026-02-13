@@ -26,7 +26,7 @@ Chapter 1 (Formal Calculus) from Nozaradan's "Introduction to Vertex Algebras."
 * `Binomial` - Extended binomial coefficients
 * `Expansion` - Expansion operators `i_{z,w}`, `i_{w,z}`
 * `Delta` - Formal delta distribution and its seven properties
-* `HahnSeries` - Compatibility with Mathlib's HahnSeries (stubs)
+* `HahnSeries` - Compatibility with Mathlib's HahnSeries
 
 ## References
 

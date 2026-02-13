@@ -36,7 +36,10 @@ Everything below is fully proved and compiles cleanly with `lake build` (1395 jo
 - `Zero`, `Add`, `SMul A`
 
 ### `FormalDist1 A` (`[Ring A]`)
-- `Mul` (Cauchy product), `One`
+- `Mul` (Cauchy product)
+
+### `FormalDist1 A` (`[CommRing A]`)
+- `One`
 
 ### `FormalDist2 A` (`[CommRing A]`)
 - `Mul` (2D Cauchy product)
@@ -47,17 +50,17 @@ Everything below is fully proved and compiles cleanly with `lake build` (1395 jo
 
 | Theorem | Statement | Module |
 |---------|-----------|--------|
-| `zero_mul_1d` | `0 * a = 0` | Mul |
-| `mul_zero_1d` | `a * 0 = 0` | Mul |
-| `add_mul_1d` | `(a + b) * c = a * c + b * c` | Mul |
-| `mul_add_1d` | `a * (b + c) = a * b + a * c` | Mul |
-| `smul_mul_1d` | `(r • a) * b = r • (a * b)` | Mul |
+| `zero_mul` | `0 * a = 0` | Mul |
+| `mul_zero` | `a * 0 = 0` | Mul |
+| `add_mul` | `(a + b) * c = a * c + b * c` | Mul |
+| `mul_add` | `a * (b + c) = a * b + a * c` | Mul |
+| `smul_mul` | `(r • a) * b = r • (a * b)` | Mul |
 
 ### 1D (`CommRing A`)
 
 | Theorem | Statement | Module |
 |---------|-----------|--------|
-| `mul_smul_1d` | `a * (r • b) = r • (a * b)` | Mul |
+| `mul_smul` | `a * (r • b) = r • (a * b)` | Mul |
 
 ### 2D (`CommRing A`)
 
@@ -110,12 +113,12 @@ Everything below is fully proved and compiles cleanly with `lake build` (1395 jo
 
 | Theorem | Statement | Module |
 |---------|-----------|--------|
-| `deriv_z_expansion_izw` | `d_z i_{z,w}(z-w)^k = k * i_{z,w}(z-w)^{k-1}` | Expansion |
-| `deriv_w_expansion_izw` | `d_w i_{z,w}(z-w)^k = -k * i_{z,w}(z-w)^{k-1}` | Expansion |
-| `deriv_z_expansion_iwz` | `d_z i_{w,z}(z-w)^k = k * i_{w,z}(z-w)^{k-1}` | Expansion |
-| `deriv_w_expansion_iwz` | `d_w i_{w,z}(z-w)^k = -k * i_{w,z}(z-w)^{k-1}` | Expansion |
+| `deriv_fst_expansion_izw` | `d_z i_{z,w}(z-w)^k = k * i_{z,w}(z-w)^{k-1}` | Expansion |
+| `deriv_snd_expansion_izw` | `d_w i_{z,w}(z-w)^k = -k * i_{z,w}(z-w)^{k-1}` | Expansion |
+| `deriv_fst_expansion_iwz` | `d_z i_{w,z}(z-w)^k = k * i_{w,z}(z-w)^{k-1}` | Expansion |
+| `deriv_snd_expansion_iwz` | `d_w i_{w,z}(z-w)^k = -k * i_{w,z}(z-w)^{k-1}` | Expansion |
 
-## Theorems -- Dirac Delta
+## Theorems -- Formal Delta
 
 ### Proposition 1.3.4
 
@@ -129,7 +132,7 @@ Everything below is fully proved and compiles cleanly with `lake build` (1395 jo
 |---|---------|-----------|--------|
 | 1 | `mul_z_sub_w_pow_succ_iteratedDeriv_formalDelta_eq_zero` | `(z-w)^{n+1} d_w^n delta = 0` | Delta |
 | 2 | `mul_z_sub_w_iteratedDeriv_formalDelta` | `(z-w) d_w^n delta = n * d_w^{n-1} delta` for n >= 1 | Delta |
-| 3 | `formalDelta_symm` | `delta(z,w) = delta(w,z)` | Delta |
+| 3 | `formalDelta_symm` | Symmetry (definitional; coefficient condition is symmetric by `rfl`) | Delta |
 | 4 | `deriv_fst_formalDelta_add_deriv_snd_formalDelta` | `d_z delta + d_w delta = 0` | Delta |
 | 5 | `embedFst_mulGen_formalDelta_eq_embedSnd` | `a(z) delta = a(w) delta` | Delta |
 | 6 | `residueAt_embedFst_mulGen_formalDelta` | `Res_z a(z) delta = a(w)` | Delta |

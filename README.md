@@ -53,14 +53,15 @@ FormalDistribution/
 ### Section 1.3 -- Formal Delta
 
 - `formalDelta : GenFormalDist2 A`
+- Proposition 1.3.4: `formalDelta_eq_expansion_izw_sub_iwz`
 - All 7 properties from Proposition 1.3.5:
-  1. `formalDelta_eq_expansion_izw_sub_iwz`
-  2. `mul_z_sub_w_formalDelta` -- (z-w) delta = 0
-  3. `formalDelta_symm`
-  4. `deriv_fst_formalDelta_add_deriv_snd_formalDelta`
+  1. `mul_z_sub_w_pow_succ_iteratedDeriv_formalDelta_eq_zero` -- (z-w)^{n+1} d^n delta = 0
+  2. `mul_z_sub_w_iteratedDeriv_formalDelta` -- (z-w) d^n delta = n d^{n-1} delta
+  3. `formalDelta_symm` -- symmetry (definitional, by `rfl`)
+  4. `deriv_fst_formalDelta_add_deriv_snd_formalDelta` -- d_z delta + d_w delta = 0
   5. `embedFst_mulGen_formalDelta_eq_embedSnd` -- a(z) delta = a(w) delta
   6. `residueAt_embedFst_mulGen_formalDelta` -- Res_z a(z) delta = a(w)
-  7. `mul_z_sub_w_pow_iteratedDeriv_formalDelta`
+  7. `mul_z_sub_w_pow_iteratedDeriv_formalDelta` -- falling factorial identity
 
 ### Hahn Series Bridge
 

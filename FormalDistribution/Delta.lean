@@ -322,7 +322,10 @@ theorem smul_mul_z_sub_w_pow (m : ℕ) (c : A) (a : GenFormalDist2 A) :
          c • mul_z_sub_w (mul_z_sub_w_pow a m)
     rw [ihm, mul_z_sub_w_smul]
 
-/-- Property 3: `δ(z,w) = δ(z,w)` (symmetry of the definition).
+/-- Property 3 (symmetry): the formal delta is definitionally symmetric.
+
+The coefficient condition `idx 0 + idx 1 + 1 = 0` is invariant under swapping `idx 0` and
+`idx 1` (by commutativity of addition), so the definition treats both variables identically.
 
 ## References
 * [Nozaradan, *Introduction to Vertex Algebras*], Proposition 1.3.5(3)

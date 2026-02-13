@@ -9,7 +9,7 @@ and Definition 1.3.3 are intentionally omitted (see "Not Formalized" below).
 
 - **2950 lines** across 8 submodules + root re-export
 - **0 axioms, 0 sorry, 0 admits**
-- **148 public declarations** (definitions, theorems, instances)
+- **~150 public declarations** (definitions, theorems, instances)
 - **`lake build`**: 1395 jobs, 0 errors
 - Follows mathlib conventions throughout
 
@@ -40,10 +40,11 @@ and Definition 1.3.3 are intentionally omitted (see "Not Formalized" below).
 
 ### Section 1.3 -- Formal Delta
 - `formalDelta : GenFormalDist2 A` with `formalDelta_coeff` by `rfl`
-- All 7 properties proved:
-  1. `formalDelta_eq_expansion_izw_sub_iwz` (Proposition 1.3.4)
-  2. `mul_z_sub_w_formalDelta` -- $(z-w)\delta = 0$
-  3. `formalDelta_symm` -- $\delta(z,w) = \delta(w,z)$
+- Proposition 1.3.4: `formalDelta_eq_expansion_izw_sub_iwz`
+- All 7 properties of Proposition 1.3.5 proved:
+  1. `mul_z_sub_w_pow_succ_iteratedDeriv_formalDelta_eq_zero` -- $(z-w)^{n+1} \partial_w^n\delta = 0$
+  2. `mul_z_sub_w_iteratedDeriv_formalDelta` -- $(z-w) \partial_w^n\delta = n \partial_w^{n-1}\delta$
+  3. `formalDelta_symm` -- symmetry (definitional, by `rfl`)
   4. `deriv_fst_formalDelta_add_deriv_snd_formalDelta` -- $\partial_z\delta + \partial_w\delta = 0$
   5. `embedFst_mulGen_formalDelta_eq_embedSnd` -- $a(z)\delta = a(w)\delta$
   6. `residueAt_embedFst_mulGen_formalDelta` -- $\operatorname{Res}_z a(z)\delta = a(w)$

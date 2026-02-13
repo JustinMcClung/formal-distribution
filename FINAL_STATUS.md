@@ -60,10 +60,11 @@ structure GeneralizedFormalDistribution (A : Type*) [Ring A] (nvars : ℕ) where
 ### Formal Delta (Section 1.3)
 - `formalDelta : GenFormalDist2 A` (defined as `GeneralizedFormalDistribution`, no axiom needed)
 - `formalDelta_coeff` proved by `rfl`
-- All 7 properties from Nozaradan Section 1.3 proved:
-  1. `formalDelta_eq_expansion_izw_sub_iwz`
-  2. `mul_z_sub_w_formalDelta` ($(z-w)\delta = 0$)
-  3. `formalDelta_symm`
+- Proposition 1.3.4: `formalDelta_eq_expansion_izw_sub_iwz`
+- All 7 properties of Proposition 1.3.5 proved:
+  1. `mul_z_sub_w_pow_succ_iteratedDeriv_formalDelta_eq_zero` ($(z-w)^{n+1}\partial_w^n\delta = 0$)
+  2. `mul_z_sub_w_iteratedDeriv_formalDelta` ($(z-w)\partial_w^n\delta = n\partial_w^{n-1}\delta$)
+  3. `formalDelta_symm` (symmetry, definitional by `rfl`)
   4. `deriv_fst_formalDelta_add_deriv_snd_formalDelta` ($\partial_z\delta + \partial_w\delta = 0$)
   5. `embedFst_mulGen_formalDelta_eq_embedSnd` ($a(z)\delta = a(w)\delta$)
   6. `residueAt_embedFst_mulGen_formalDelta` ($\text{Res}_z\, a(z)\delta = a(w)$)

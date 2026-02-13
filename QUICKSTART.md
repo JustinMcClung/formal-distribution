@@ -58,8 +58,8 @@ import FormalDistribution.Mul
 example (a b : FormalDist1 C) : FormalDist1 C := a * b
 
 -- Ring axioms are proved
-#check FormalDistribution.add_mul_1d
-#check FormalDistribution.mul_add_1d
+#check FormalDistribution.add_mul
+#check FormalDistribution.mul_add
 ```
 
 ### Extended binomial
@@ -92,7 +92,7 @@ import FormalDistribution.Delta
 
 -- Key properties
 #check FormalDelta.mul_z_sub_w_formalDelta   -- (z-w) delta = 0
-#check FormalDelta.formalDelta_symm          -- delta(z,w) = delta(w,z)
+#check FormalDelta.formalDelta_symm          -- symmetry (definitional)
 
 -- a(z) delta(z,w) = a(w) delta(z,w)
 #check FormalDelta.embedFst_mulGen_formalDelta_eq_embedSnd

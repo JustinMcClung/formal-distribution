@@ -297,7 +297,7 @@ theorem mul_coeff (a b : FormalDist1 A) (n : ℤ) :
   rfl
 
 /-- Right distributivity: `(a + b) * c = a * c + b * c`. -/
-theorem mul_add (a b c : FormalDist1 A) : (a + b) * c = a * c + b * c := by
+theorem add_mul (a b c : FormalDist1 A) : (a + b) * c = a * c + b * c := by
   ext idx
   show mulCoeff1d (a + b) c (idx 0) = mulCoeff1d a c (idx 0) + mulCoeff1d b c (idx 0)
   unfold mulCoeff1d
@@ -337,7 +337,7 @@ theorem mul_add (a b c : FormalDist1 A) : (a + b) * c = a * c + b * c := by
   rw [lhs_ext]
   conv_lhs => arg 2; ext k
               rw [show (a + b).coeff (fun _ => k) = a.coeff (fun _ => k) + b.coeff (fun _ => k) by rfl]
-  simp only [add_mul, Finset.sum_add_distrib]
+  simp only [_root_.add_mul, Finset.sum_add_distrib]
   congr 1
   · refine (Finset.sum_subset Finset.subset_union_left ?_).symm
     intro k _ hk
@@ -355,7 +355,7 @@ theorem mul_add (a b c : FormalDist1 A) : (a + b) * c = a * c + b * c := by
       rw [hk h, mul_zero]
 
 /-- Left distributivity: `a * (b + c) = a * b + a * c`. -/
-theorem add_mul (a b c : FormalDist1 A) : a * (b + c) = a * b + a * c := by
+theorem mul_add (a b c : FormalDist1 A) : a * (b + c) = a * b + a * c := by
   ext idx
   show mulCoeff1d a (b + c) (idx 0) = mulCoeff1d a b (idx 0) + mulCoeff1d a c (idx 0)
   unfold mulCoeff1d
