@@ -4,9 +4,9 @@ An axiom-free Lean 4 formalization covering most of **Section 1: Formal Calculus
 Nozaradan's *Introduction to Vertex Algebras*, structured as a mathlib-compatible library
 with a bridge to `Mathlib.RingTheory.HahnSeries`.
 
-Propositions 1.2.3, 1.2.5, and 1.3.6 are omitted (they require topological or Laurent
-series machinery beyond the algebraic scope). Definition 1.3.3 is also omitted as
-Proposition 1.3.4 is proved directly without it.
+Propositions 1.2.3 and 1.2.5 are omitted (they require topological machinery
+beyond the algebraic scope). Definition 1.3.3 is also omitted as Proposition 1.3.4
+is proved directly without it.
 
 ## Build
 
@@ -14,7 +14,7 @@ Requires Lean 4 (v4.28.0-rc1) with Mathlib.
 
 ```bash
 lake exe cache get   # fetch Mathlib oleans
-lake build           # 1395 jobs, 0 errors
+lake build           # 1396 jobs, 0 errors
 ```
 
 ## File Structure
@@ -22,17 +22,18 @@ lake build           # 1395 jobs, 0 errors
 ```
 FormalDistribution.lean              -- root re-export
 FormalDistribution/
-  Basic.lean          (431 lines)    -- core types, Zero/Add/SMul instances
+  Basic.lean          (462 lines)    -- core types, Zero/Add/Neg/Sub/SMul instances
   Deriv.lean          (181 lines)    -- formal derivatives
   Mul.lean            (955 lines)    -- 1D/2D multiplication, ring axioms
   Fourier.lean        (231 lines)    -- Fourier expansion, modes, residue
-  Binomial.lean       (177 lines)    -- extended binomial Int.extChoose
+  Binomial.lean       (195 lines)    -- extended/generalized binomial coefficients
   Expansion.lean      (251 lines)    -- expansion operators i_{z,w}, i_{w,z}
-  Delta.lean          (540 lines)    -- formal delta, all 7 properties
-  HahnSeries.lean     (149 lines)   -- bridge to Mathlib HahnSeries
+  Delta.lean          (559 lines)    -- formal delta, all 7 properties, swap symmetry
+  HahnSeries.lean     (271 lines)   -- bridge to Mathlib HahnSeries, CommRing instance
+  Decomposition.lean  (230 lines)   -- Proposition 1.3.6: decomposition theorem
 ```
 
-**2950 lines total. 0 axioms. 0 sorry. 0 admits.**
+**3335 lines total. 0 axioms. 0 sorry. 0 admits.**
 
 ## Mathematical Content
 
@@ -41,13 +42,15 @@ FormalDistribution/
 - `FormalDistribution A n` -- distributions with finite support
 - `GeneralizedFormalDistribution A n` -- bounded-finite support (for delta)
 - Type aliases: `FormalDist1`, `FormalDist2`, `GenFormalDist2`
-- Arithmetic: addition, scalar multiplication, formal derivatives
+- Arithmetic: addition, negation, subtraction, scalar multiplication, formal derivatives
 - 1D and 2D Cauchy product multiplication with full ring axioms
+- `CommRing (FormalDist1 R)` via HahnSeries bridge
 
 ### Section 1.2 -- Expansion Operators
 
 - `fourierExpansion`, `fourierMode`, `residue`
 - `Int.extChoose` -- extended binomial coefficient for integers
+- `intBinomial` -- integer-valued generalized binomial with Pascal's rule
 - `expansion_izw`, `expansion_iwz` -- expansion operators
 
 ### Section 1.3 -- Formal Delta
@@ -57,17 +60,20 @@ FormalDistribution/
 - All 7 properties from Proposition 1.3.5:
   1. `mul_z_sub_w_pow_succ_iteratedDeriv_formalDelta_eq_zero` -- (z-w)^{n+1} d^n delta = 0
   2. `mul_z_sub_w_iteratedDeriv_formalDelta` -- (z-w) d^n delta = n d^{n-1} delta
-  3. `formalDelta_symm` -- symmetry (definitional, by `rfl`)
+  3. `formalDelta_swap` -- variable-swap symmetry
   4. `deriv_fst_formalDelta_add_deriv_snd_formalDelta` -- d_z delta + d_w delta = 0
   5. `embedFst_mulGen_formalDelta_eq_embedSnd` -- a(z) delta = a(w) delta
   6. `residueAt_embedFst_mulGen_formalDelta` -- Res_z a(z) delta = a(w)
   7. `mul_z_sub_w_pow_iteratedDeriv_formalDelta` -- falling factorial identity
+- Proposition 1.3.6: `decomposition_theorem` -- if (z-w)^N f = 0 then f decomposes as
+  a finite sum involving generalized binomial coefficients (no `[Algebra ℚ A]` needed)
 
 ### Hahn Series Bridge
 
 - `toHahnSeries : FormalDist1 R -> HahnSeries Z R`
 - `ofHahnSeries` (inverse for finite-support series)
-- Preserves zero, one, addition, and multiplication
+- Preserves zero, one, addition, multiplication, negation, powers, casts
+- `CommRing (FormalDist1 R)` transferred via `Function.Injective.commRing`
 - Round-trip identities in both directions
 
 ## Usage
