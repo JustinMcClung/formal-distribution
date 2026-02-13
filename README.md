@@ -1,8 +1,12 @@
 # FormalDistribution -- Lean 4 Formalization of Formal Calculus
 
-A complete, axiom-free Lean 4 formalization of **Section 1: Formal Calculus** from
+An axiom-free Lean 4 formalization covering most of **Section 1: Formal Calculus** from
 Nozaradan's *Introduction to Vertex Algebras*, structured as a mathlib-compatible library
 with a bridge to `Mathlib.RingTheory.HahnSeries`.
+
+Propositions 1.2.3, 1.2.5, and 1.3.6 are omitted (they require topological or Laurent
+series machinery beyond the algebraic scope). Definition 1.3.3 is also omitted as
+Proposition 1.3.4 is proved directly without it.
 
 ## Build
 

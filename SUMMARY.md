@@ -1,8 +1,9 @@
 # Summary: Formal Distribution Library
 
-A complete, axiom-free Lean 4 formalization of Section 1 (Formal Calculus) from
+An axiom-free Lean 4 formalization covering most of Section 1 (Formal Calculus) from
 Nozaradan's *Introduction to Vertex Algebras*, refactored into 8 mathlib-compatible
-modules with a Hahn Series interoperability bridge.
+modules with a Hahn Series interoperability bridge. Propositions 1.2.3, 1.2.5, 1.3.6
+and Definition 1.3.3 are intentionally omitted (see "Not Formalized" below).
 
 ## At a Glance
 
