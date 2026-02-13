@@ -4,3 +4,8 @@
 *.ilean
 *.trace
 *.hash
+
+# Stale build reports (superseded by README.md and FORMALIZATION_STATUS.md)
+FINAL_STATUS.md
+SUMMARY.md
+QUICKSTART.md
