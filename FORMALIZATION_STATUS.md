@@ -1,6 +1,6 @@
 # Formalization Status: Nozaradan Chapter 1 -- Formal Calculus
 
-**11 modules** under `FormalDistribution/` | **3887 lines** | **0 errors | 0 sorry | 0 axioms**
+**11 modules** under `FormalDistribution/` | **4088 lines** | **0 errors | 0 sorry | 0 axioms**
 
 Everything below is fully proved and compiles cleanly with `lake build` (1398 jobs).
 
@@ -250,31 +250,75 @@ coefficients, avoiding division by factorials (no `[Algebra ℚ A]` required).
 | `mul_z_sub_w_pow_zero_of_ge` | `(z-w)^N f = 0` and `j ≥ N` implies `(z-w)^j f = 0` | Locality |
 | `nthProduct_eq_zero_of_local` | `a_{(j)} b = 0` for `j ≥ N` when `[a,b]` is local of order `N` | Locality |
 
+### Leibniz Rule and Integration by Parts
+
+| Theorem | Statement | Module |
+|---------|-----------|--------|
+| `leibniz_deriv_fst_coeff2` | `Res_z (z-w)^j ∂_z f = -j · Res_z (z-w)^{j-1} f` (Leibniz rule) | Locality |
+| `integration_by_parts` | `Res_z (z-w)^{j+1} ∂_z f = -(j+1) · Res_z (z-w)^j f` | Locality |
+
 ## Theorems -- Fourier Transform (Section 1.5)
 
-### One-Variable (Definition 1.5.1, Proposition 1.5.2)
+### One-Variable (Definition 1.5.1, Propositions 1.5.2)
 
 | Theorem | Statement | Module |
 |---------|-----------|--------|
 | `fourierTransformCoeff_deriv_zero` | `F(∂a)_0 = 0` | FourierTransform |
-| `fourierTransformCoeff_deriv` | `F(∂a)_n = -F(a)_{n-1}` for `n ≥ 1` | FourierTransform |
+| `fourierTransformCoeff_deriv` | `F(∂a)_n = -F(a)_{n-1}` for `n ≥ 1` (Prop 1.5.2) | FourierTransform |
+| `fourierMode_reflect` | `(a(-z))_n = (-1)^{n+1} · a_n` | FourierTransform |
+| `fourierTransformCoeff_reflect` | `F(a(-z))_n = (-1)^{n+1} F(a)_n` (Prop 1.5.2(3)) | FourierTransform |
 
 ### Two-Variable (Definition 1.5.3, Proposition 1.5.4)
 
 | Theorem | Statement | Module |
 |---------|-----------|--------|
-| `twoVarFourierCoeff_commutator_eq` | `F_{z,w}^λ([a,b])_j = (1/j!) · a_{(j)} b` | FourierTransform |
+| `twoVarFourierCoeff_commutator_eq` | `F_{z,w}^λ([a,b])_j = (1/j!) · a_{(j)} b` (Prop 1.5.4) | FourierTransform |
+| `twoVarFourierCoeff_deriv_fst_zero` | `F_{z,w}^λ(∂_z f)_0 = 0` | FourierTransform |
+| `twoVarFourierCoeff_deriv_fst` | `F_{z,w}^λ(∂_z f)_{j+1} = -F_{z,w}^λ(f)_j` (Prop 1.5.4(2)) | FourierTransform |
 | `twoVarFourierCoeff_eq_zero_of_local` | Lambda-bracket is polynomial for local distributions | FourierTransform |
 
-## Not Formalized
+## Intentional Omissions
 
-Intentionally omitted from Chapter 1:
+Three items from Chapter 1 are intentionally omitted. None of them affect the
+completeness of the algebraic theory; all downstream consequences are formalized.
 
-- **Proposition 1.2.3** (expansion formulas via power series evaluation) -- requires topological/analytic machinery beyond the algebraic scope
-- **Proposition 1.2.5** (uniqueness of expansion) -- depends on 1.2.3
-- **Definition 1.3.3** (alternative delta via limits) -- not needed; Prop 1.3.4 proved directly
+### Proposition 1.2.3 (Expansion Formulas via Analytic Evaluation)
 
-All other definitions, propositions, theorems, remarks, and examples from Sections 1.1--1.5 are formalized.
+Proposition 1.2.3 states that substituting a complex number into the formal
+geometric series `i_{z,w}(z-w)^k` recovers the classical Laurent expansion of
+`(z-w)^k` in the region `|z| > |w|` (and similarly for `i_{w,z}` in `|w| > |z|`).
+
+This is **analytic motivation**, not an algebraic result. Formalizing it would
+require `Complex`, `HasSum`, geometric series convergence, and analytic
+continuation machinery -- a substantial detour into analysis with no payoff for
+the algebraic theory. The result is never used in any later proof; its role in
+the text is to explain *why* the formal expansion operators are defined the way
+they are. All algebraic consequences are already captured:
+
+- Remark 1.2.4 (`expansion_izw_eq_iwz_of_nonneg`): both operators agree for `k ≥ 0`
+- Proposition 1.2.6: derivative formulas for expansion operators
+- Proposition 1.3.4: `δ(z,w) = i_{z,w}(z-w)^{-1} - i_{w,z}(z-w)^{-1}`
+
+### Remark 1.2.5 (Notational Convention)
+
+The text's "Proposition 1.2.5" is actually **Remark 1.2.5**, a notational
+convention explaining how other references (particularly Lepowsky-Li) write
+expansion operators using a different variable convention. It has no
+mathematical content -- it is a note about notation in other books. There is
+nothing to formalize.
+
+### Definition 1.3.3 (Delta via Limits)
+
+Definition 1.3.3 gives an alternative characterization of the formal delta
+function as a limit of truncated sums. This definition is bypassed because
+Proposition 1.3.4 (`formalDelta_eq_expansion_izw_sub_iwz`) is proved directly
+from the coefficient-level definition, and all seven properties of
+Proposition 1.3.5 follow without it.
+
+---
+
+All other definitions, propositions, theorems, remarks, and examples from
+Sections 1.1--1.5 are formalized.
 
 ## Verification
 

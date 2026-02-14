@@ -4,9 +4,18 @@ An axiom-free Lean 4 formalization of **Chapter 1: Formal Calculus** from
 Nozaradan's *Introduction to Vertex Algebras*, structured as a mathlib-compatible library
 with a bridge to `Mathlib.RingTheory.HahnSeries`.
 
-Propositions 1.2.3 and 1.2.5 are omitted (they require topological machinery
-beyond the algebraic scope). Definition 1.3.3 is also omitted as Proposition 1.3.4
-is proved directly without it.
+Three items are intentionally omitted:
+
+- **Proposition 1.2.3** is analytic motivation showing that formal expansion
+  operators recover classical Laurent expansions in `|z| > |w|`. Formalizing it
+  would require `Complex`, `HasSum`, and geometric series convergence -- a
+  substantial analysis detour with no payoff for the algebraic theory. All
+  downstream consequences (Remark 1.2.4, Propositions 1.2.6, 1.3.4) are
+  already formalized.
+- **Remark 1.2.5** is a notational convention about how other references write
+  expansion operators. It has no mathematical content.
+- **Definition 1.3.3** (delta via limits) is bypassed; Proposition 1.3.4 is
+  proved directly from the coefficient-level definition.
 
 ## Build
 
