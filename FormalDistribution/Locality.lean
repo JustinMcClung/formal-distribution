@@ -24,6 +24,8 @@ that the formal delta distribution and its derivatives are local.
 * `iteratedDeriv_formalDelta_isLocal` - `∂_w^n δ(z,w)` is local with `N = n + 1`
 * `isLocal_deriv_snd` - derivatives of local distributions are local
 * `commRing_mutuallyLocal` - all pairs are mutually local over a commutative ring
+* `leibniz_deriv_fst_coeff2` - Leibniz rule for `∂_z` and `(z-w)^j`
+* `integration_by_parts` - `Res_z (z-w)^{j+1} ∂_z f = -(j+1) · Res_z (z-w)^j f`
 
 ## References
 
@@ -210,6 +212,122 @@ lemma mul_z_sub_w_deriv_snd (f : GenFormalDist2 A) :
   have key : (q + 1 : ℤ) • coeff2 f p q = q • coeff2 f p q + coeff2 f p q := by
     rw [add_zsmul, one_zsmul]
   rw [key]; abel
+
+/-! ## z-derivative interaction with mul_z_sub_w -/
+
+/-- Helper: coefficient of `∂_z f` in terms of `coeff2`. -/
+private lemma deriv_fst_coeff2 (f : GenFormalDist2 A) (p q : ℤ) :
+    coeff2 (GeneralizedFormalDistribution.deriv f (0 : Fin 2)) p q =
+    (p + 1 : ℤ) • coeff2 f (p + 1) q := by
+  unfold coeff2 GeneralizedFormalDistribution.deriv
+  dsimp only []
+  congr 2
+  funext i; fin_cases i
+  · simp [Function.update]
+  · simp [Function.update, show ¬((1 : Fin 2) = (0 : Fin 2)) from by decide]
+
+/-- Multiplying by `(z-w)` commutes with taking the `z`-derivative up to a correction term.
+
+`(z-w) · ∂_z f = ∂_z ((z-w) · f) - f` -/
+lemma mul_z_sub_w_deriv_fst (f : GenFormalDist2 A) :
+    mul_z_sub_w (GeneralizedFormalDistribution.deriv f 0) =
+    GeneralizedFormalDistribution.deriv (mul_z_sub_w f) 0 - f := by
+  apply coeff2_ext; intro p q
+  rw [mul_z_sub_w_coeff2, deriv_fst_coeff2, deriv_fst_coeff2,
+      show (p - 1 + 1 : ℤ) = p from by omega]
+  -- LHS = p • coeff2 f p q - (p+1) • coeff2 f (p+1) (q-1)
+  -- Expand RHS
+  change _ = coeff2 (GeneralizedFormalDistribution.deriv (mul_z_sub_w f) (0 : Fin 2)) p q -
+             coeff2 f p q
+  rw [deriv_fst_coeff2, mul_z_sub_w_coeff2, show (p + 1 - 1 : ℤ) = p from by omega]
+  -- RHS = (p+1) • (coeff2 f p q - coeff2 f (p+1)(q-1)) - coeff2 f p q
+  rw [smul_sub]
+  have key : (p + 1 : ℤ) • coeff2 f p q = p • coeff2 f p q + coeff2 f p q := by
+    rw [add_zsmul, one_zsmul]
+  rw [key]; abel
+
+/-- The residue in the `z`-variable of a `z`-derivative vanishes:
+`Res_z ∂_z f = 0`.
+
+This is because the coefficient at `z^{-1}` of `∂_z f` involves `(-1+1) = 0`. -/
+lemma residueAt_deriv_fst (f : GenFormalDist2 A) :
+    GeneralizedFormalDistribution.residueAt 0
+      (GeneralizedFormalDistribution.deriv f 0) = 0 := by
+  ext idx
+  change coeff2 (GeneralizedFormalDistribution.deriv f (0 : Fin 2)) (-1) (idx 0) = 0
+  rw [deriv_fst_coeff2, show (-1 : ℤ) + 1 = 0 from by omega]
+  exact zero_smul _ _
+
+/-! ## Integration by parts -/
+
+/-- Leibniz rule at the coefficient level: for all `j`, `p`, `q`,
+`coeff2 ((z-w)^{j+1} ∂_z f) p q = (p+1) · coeff2 ((z-w)^{j+1} f) (p+1) q - (j+1) · coeff2 ((z-w)^j f) p q`.
+
+Specializing to `p = -1` gives integration by parts. -/
+theorem leibniz_deriv_fst_coeff2 (f : GenFormalDist2 A) (j : ℕ) (p q : ℤ) :
+    coeff2 (mul_z_sub_w_pow (GeneralizedFormalDistribution.deriv f 0) (j + 1)) p q =
+    (p + 1 : ℤ) • coeff2 (mul_z_sub_w_pow f (j + 1)) (p + 1) q -
+    (↑(j + 1 : ℕ) : A) * coeff2 (mul_z_sub_w_pow f j) p q := by
+  induction j generalizing p q with
+  | zero =>
+    show coeff2 (mul_z_sub_w (GeneralizedFormalDistribution.deriv f 0)) p q =
+         (p + 1 : ℤ) • coeff2 (mul_z_sub_w f) (p + 1) q - (↑(1 : ℕ) : A) * coeff2 f p q
+    rw [mul_z_sub_w_coeff2, deriv_fst_coeff2, deriv_fst_coeff2,
+        show (p - 1 + 1 : ℤ) = p from by omega,
+        mul_z_sub_w_coeff2, show (p + 1 - 1 : ℤ) = p from by omega]
+    simp only [Nat.cast_one, one_mul, smul_sub]
+    have key : (p + 1 : ℤ) • coeff2 f p q = p • coeff2 f p q + coeff2 f p q := by
+      rw [add_zsmul, one_zsmul]
+    rw [key]; abel
+  | succ j ih =>
+    -- Expand LHS via mul_z_sub_w_coeff2 and IH
+    have lhs_eq : coeff2 (mul_z_sub_w_pow
+        (GeneralizedFormalDistribution.deriv f 0) (j + 1 + 1)) p q =
+      p • coeff2 (mul_z_sub_w_pow f (j + 1)) p q
+      - (↑(j + 1 : ℕ) : A) * coeff2 (mul_z_sub_w_pow f j) (p - 1) q
+      - ((p + 1 : ℤ) • coeff2 (mul_z_sub_w_pow f (j + 1)) (p + 1) (q - 1)
+         - (↑(j + 1 : ℕ) : A) * coeff2 (mul_z_sub_w_pow f j) p (q - 1)) := by
+      change coeff2 (mul_z_sub_w (mul_z_sub_w_pow _ (j + 1))) p q = _
+      rw [mul_z_sub_w_coeff2, ih (p - 1) q, ih p (q - 1),
+          show (p - 1 + 1 : ℤ) = p from by omega]
+    rw [lhs_eq]
+    -- Factor G terms: G(p-1,q) - G(p,q-1) = F(p,q) via mul_z_sub_w
+    have hG : coeff2 (mul_z_sub_w_pow f j) (p - 1) q -
+              coeff2 (mul_z_sub_w_pow f j) p (q - 1) =
+              coeff2 (mul_z_sub_w_pow f (j + 1)) p q :=
+      (mul_z_sub_w_coeff2 _ p q).symm
+    -- Expand RHS: coeff2(f^{j+2})(p+1,q) via mul_z_sub_w
+    have hF : coeff2 (mul_z_sub_w_pow f (j + 1 + 1)) (p + 1) q =
+        coeff2 (mul_z_sub_w_pow f (j + 1)) p q -
+        coeff2 (mul_z_sub_w_pow f (j + 1)) (p + 1) (q - 1) := by
+      change coeff2 (mul_z_sub_w (mul_z_sub_w_pow f (j + 1))) (p + 1) q = _
+      rw [mul_z_sub_w_coeff2, show (p + 1 - 1 : ℤ) = p from by omega]
+    rw [hF, show (↑(j + 1 + 1 : ℕ) : A) = (↑(j + 1 : ℕ) : A) + 1 from by push_cast; ring]
+    -- Factor c * (G1 - G2) = c * F in the LHS
+    have step : (↑(j + 1 : ℕ) : A) * coeff2 (mul_z_sub_w_pow f j) (p - 1) q -
+                (↑(j + 1 : ℕ) : A) * coeff2 (mul_z_sub_w_pow f j) p (q - 1) =
+                (↑(j + 1 : ℕ) : A) * coeff2 (mul_z_sub_w_pow f (j + 1)) p q := by
+      rw [← mul_sub, hG]
+    -- Rearrange LHS: a - b - (c - d) = a - c - (b - d), then substitute step
+    rw [sub_sub_sub_comm, step, smul_sub, add_mul, one_mul]
+    -- LHS: p • F' - (p+1) • S - c * F'
+    -- RHS: (p+1) • F' - (p+1) • S - (c * F' + F')
+    have hp1 : (p + 1 : ℤ) • coeff2 (mul_z_sub_w_pow f (j + 1)) p q =
+        p • coeff2 (mul_z_sub_w_pow f (j + 1)) p q +
+        coeff2 (mul_z_sub_w_pow f (j + 1)) p q := by
+      rw [add_zsmul, one_zsmul]
+    rw [hp1]; abel
+
+/-- **Integration by parts** for formal distributions:
+`Res_z (z-w)^{j+1} ∂_z f = -(j+1) · Res_z (z-w)^j f`.
+
+This is the key identity relating the two-variable Fourier transform of `∂_z f`
+to that of `f`. -/
+theorem integration_by_parts (f : GenFormalDist2 A) (j : ℕ) (q : ℤ) :
+    coeff2 (mul_z_sub_w_pow (GeneralizedFormalDistribution.deriv f 0) (j + 1)) (-1) q =
+    -(↑(j + 1 : ℕ) : A) * coeff2 (mul_z_sub_w_pow f j) (-1) q := by
+  rw [leibniz_deriv_fst_coeff2, show (-1 : ℤ) + 1 = 0 from by omega, zero_smul, zero_sub,
+      neg_mul]
 
 /-- If `f` is local of order `N`, then `∂_w f` is local of order `N + 1`.
 

@@ -23,7 +23,9 @@ This requires the coefficient ring to be a `ℚ`-algebra (for division by factor
 
 * `fourierTransformCoeff_deriv_zero` - F(∂a) has zero constant term
 * `fourierTransformCoeff_deriv` - F(∂a)_n = -F(a)_{n-1} (Proposition 1.5.2)
+* `fourierTransformCoeff_reflect` - F(a(-z))_n = (-1)^{n+1} F(a)_n (Proposition 1.5.2(3))
 * `twoVarFourierCoeff_commutator_eq` - two-variable FT of commutator equals scaled j-th product
+* `twoVarFourierCoeff_deriv_fst` - F(∂_z f)_{j+1} = -F(f)_j (Proposition 1.5.4(2))
 * `twoVarFourierCoeff_eq_zero_of_local` - lambda-bracket is polynomial for local distributions
 
 ## References
@@ -94,6 +96,51 @@ theorem fourierTransformCoeff_deriv (a : FormalDist1 A) (n : ℕ) (hn : n ≥ 1)
   have hk1 : (↑(k + 1) : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
   rw [one_div, one_div, mul_inv_rev, mul_assoc, inv_mul_cancel₀ hk1, mul_one]
 
+/-! ## Reflection symmetry (Proposition 1.5.2(3)) -/
+
+/-- The reflection of a 1D formal distribution: `a(z) ↦ a(-z)`.
+
+At the coefficient level: `(reflect a)_m = (-1)^|m| · a_m`.
+
+## References
+* [Nozaradan, *Introduction to Vertex Algebras*], Section 1.5
+-/
+def reflect (a : FormalDist1 A) : FormalDist1 A where
+  coeff := fun idx => (-1 : A) ^ (idx 0).natAbs * a.coeff idx
+  support_finite := by
+    apply Set.Finite.subset a.support_finite
+    intro idx hne
+    simp only [Set.mem_setOf_eq] at hne ⊢
+    intro h; exact hne (by rw [h, mul_zero])
+
+omit [Algebra ℚ A] in
+/-- The Fourier mode of the reflected distribution:
+`(a(-z))_n = (-1)^{n+1} · a_n`. -/
+theorem fourierMode_reflect (a : FormalDist1 A) (n : ℤ) :
+    fourierMode (reflect a) n = (-1 : A) ^ (n + 1).natAbs * fourierMode a n := by
+  simp only [fourierMode, reflect]
+  show (-1 : A) ^ (-n - 1).natAbs * a.coeff _ = (-1 : A) ^ (n + 1).natAbs * a.coeff _
+  congr 1; congr 1
+  show (-n - 1).natAbs = (n + 1).natAbs
+  rw [show (-n - 1 : ℤ) = -(n + 1) from by omega, Int.natAbs_neg]
+
+/-- **Proposition 1.5.2(3)**: Reflection symmetry of the Fourier transform.
+
+`F_z^λ(a(-z)) = -F_z^{-λ}(a(z))`
+
+At the coefficient level: the n-th FT coefficient of the reflected distribution
+equals `(-1)^{n+1}` times the n-th FT coefficient of the original.
+
+## References
+* [Nozaradan, *Introduction to Vertex Algebras*], Proposition 1.5.2(3)
+-/
+theorem fourierTransformCoeff_reflect (a : FormalDist1 A) (n : ℕ) :
+    fourierTransformCoeff (reflect a) n =
+    (-1 : A) ^ (n + 1) * fourierTransformCoeff a n := by
+  unfold fourierTransformCoeff
+  rw [fourierMode_reflect, show (↑n + 1 : ℤ).natAbs = n + 1 from by omega]
+  exact mul_left_comm _ _ _
+
 /-! ## Two-variable Fourier transform (Definition 1.5.3) -/
 
 /-- The j-th coefficient of the two-variable Fourier transform of a 2D distribution.
@@ -125,6 +172,46 @@ theorem twoVarFourierCoeff_commutator_eq (a b : FormalDist1 A) (j : ℕ) :
     twoVarFourierCoeff (formalCommutator a b).toGeneralized j =
     algebraMap ℚ A (1 / ↑(Nat.factorial j)) • nthProduct a b j := by
   rfl
+
+/-! ## Two-variable FT derivative properties (Proposition 1.5.4(2)) -/
+
+/-- The 0-th two-variable FT coefficient of `∂_z f` vanishes. -/
+theorem twoVarFourierCoeff_deriv_fst_zero (f : GenFormalDist2 A) :
+    twoVarFourierCoeff (GeneralizedFormalDistribution.deriv f 0) 0 = 0 := by
+  unfold twoVarFourierCoeff
+  rw [show mul_z_sub_w_pow (GeneralizedFormalDistribution.deriv f 0) 0 =
+      GeneralizedFormalDistribution.deriv f 0 from rfl,
+    residueAt_deriv_fst]
+  ext idx; show algebraMap ℚ A _ * (0 : A) = 0; exact mul_zero _
+
+/-- **Proposition 1.5.4(2)**: The two-variable Fourier transform maps `∂_z` to
+multiplication by `-λ`.
+
+At the coefficient level: `F_{z,w}^λ(∂_z f)_{j+1} = -F_{z,w}^λ(f)_j`.
+
+Combined with the `j = 0` case `twoVarFourierCoeff_deriv_fst_zero`, this shows
+that the full two-variable FT satisfies `F(∂_z f) = -λ · F(f)`.
+
+## References
+* [Nozaradan, *Introduction to Vertex Algebras*], Proposition 1.5.4(2)
+-/
+theorem twoVarFourierCoeff_deriv_fst (f : GenFormalDist2 A) (j : ℕ) :
+    twoVarFourierCoeff (GeneralizedFormalDistribution.deriv f 0) (j + 1) =
+    -twoVarFourierCoeff f j := by
+  ext idx
+  show algebraMap ℚ A (1 / ↑(Nat.factorial (j + 1))) *
+      coeff2 (mul_z_sub_w_pow (GeneralizedFormalDistribution.deriv f 0) (j + 1)) (-1) (idx 0) =
+    -(algebraMap ℚ A (1 / ↑(Nat.factorial j)) *
+      coeff2 (mul_z_sub_w_pow f j) (-1) (idx 0))
+  rw [integration_by_parts, neg_mul, mul_neg, ← mul_assoc]
+  congr 1; congr 1
+  -- Goal: algebraMap ℚ A (1/↑((j+1)!)) * ↑(j+1) = algebraMap ℚ A (1/↑(j!))
+  rw [← map_natCast (algebraMap ℚ A) (j + 1), ← map_mul]
+  congr 1
+  -- ℚ arithmetic: (1/↑((j+1)!)) * ↑(j+1) = 1/↑(j!)
+  rw [Nat.factorial_succ, Nat.cast_mul]
+  have hj1 : (↑(j + 1) : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
+  rw [one_div, one_div, mul_inv_rev, mul_assoc, inv_mul_cancel₀ hj1, mul_one]
 
 /-- The lambda-bracket coefficients vanish for `j ≥ N` when the distributions
 are mutually local of order `N`. This means the lambda-bracket is a polynomial in `λ`. -/

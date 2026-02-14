@@ -31,11 +31,11 @@ FormalDistribution/
   Delta.lean            (559 lines)     -- formal delta, all 7 properties, swap symmetry
   HahnSeries.lean       (271 lines)    -- bridge to Mathlib HahnSeries, CommRing instance
   Decomposition.lean    (231 lines)    -- Proposition 1.3.6: decomposition theorem
-  Locality.lean         (324 lines)    -- Section 1.4: locality, commutator, j-th product
-  FourierTransform.lean (139 lines)    -- Section 1.5: Fourier transform, lambda-bracket
+  Locality.lean         (440 lines)    -- Section 1.4: locality, commutator, j-th product
+  FourierTransform.lean (224 lines)    -- Section 1.5: Fourier transform, lambda-bracket
 ```
 
-**3887 lines total. 0 axioms. 0 sorry. 0 admits.**
+**4088 lines total. 0 axioms. 0 sorry. 0 admits.**
 
 ## Mathematical Content
 
@@ -82,13 +82,17 @@ FormalDistribution/
 - `commRing_mutuallyLocal` -- all pairs are mutually local over CommRing
 - `nthProduct` -- j-th product a_{(j)} b (Remark 1.4.4)
 - `local_decomposition` -- decomposition for local distributions (Theorem 1.4.3)
+- `leibniz_deriv_fst_coeff2` -- Leibniz rule for z-derivative and (z-w)^j
+- `integration_by_parts` -- Res_z (z-w)^{j+1} d_z f = -(j+1) Res_z (z-w)^j f
 
 ### Section 1.5 -- Fourier Transform
 
 - `fourierTransformCoeff` -- n-th coefficient (1/n!)·a_n of F_z^λ(a) (Definition 1.5.1)
 - `fourierTransformCoeff_deriv` -- F(∂a)_n = -F(a)_{n-1} (Proposition 1.5.2)
+- `reflect`, `fourierTransformCoeff_reflect` -- F(a(-z)) = -F(-λ,a) (Proposition 1.5.2(3))
 - `twoVarFourierCoeff` -- j-th coefficient of two-variable FT (Definition 1.5.3)
 - `twoVarFourierCoeff_commutator_eq` -- lambda-bracket = (1/j!)·a_{(j)}b (Proposition 1.5.4)
+- `twoVarFourierCoeff_deriv_fst` -- F(∂_z f)_{j+1} = -F(f)_j (Proposition 1.5.4(2))
 - `twoVarFourierCoeff_eq_zero_of_local` -- lambda-bracket is polynomial for local distributions
 
 ### Hahn Series Bridge
