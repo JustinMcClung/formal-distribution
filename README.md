@@ -19,11 +19,11 @@ Three items are intentionally omitted:
 
 ## Build
 
-Requires Lean 4 (v4.28.0-rc1) with Mathlib.
+Requires Lean 4 (v4.28.0) with Mathlib.
 
 ```bash
 lake exe cache get   # fetch Mathlib oleans
-lake build           # 1491 jobs, 0 errors
+lake build           # 1498 jobs, 0 errors
 ```
 
 ## File Structure
