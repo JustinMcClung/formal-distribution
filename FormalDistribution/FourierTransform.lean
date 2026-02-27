@@ -35,6 +35,33 @@ This requires the coefficient ring to be a `ℚ`-algebra (for division by factor
 
 open scoped BigOperators
 
+/-! ## N-variable Fourier coefficient -/
+
+section NVariable
+
+variable {A : Type*} [CommRing A] [Algebra ℚ A]
+
+/-- The k-th coefficient of the two-variable Fourier transform at variables `(i, j)`.
+
+For an n-variable distribution `f`, the Fourier transform in variables `(i, j)` is
+`F_{x_i,x_j}^λ(f) = ∑_{k≥0} λ^k/k! · Res_{x_i} (x_i - x_j)^k f`. -/
+noncomputable def twoVarFourierCoeffAt {n : ℕ} (i j : Fin n) (hij : i ≠ j)
+    (f : GeneralizedFormalDistribution A n) (k : ℕ) : GenFormalDist1 A :=
+  algebraMap ℚ A (1 / ↑(Nat.factorial k)) •
+    GeneralizedFormalDistribution.residueAtPair i j hij (mul_var_sub_pow i j hij f k)
+
+/-- The Fourier coefficients vanish for `k ≥ N` when `f` is local of order `N`
+for the pair `(i, j)`. -/
+theorem twoVarFourierCoeffAt_eq_zero_of_local {n : ℕ} (i j : Fin n) (hij : i ≠ j)
+    (f : GeneralizedFormalDistribution A n) (N k : ℕ)
+    (hf : IsLocalForPairOfOrder f i j hij N) (hk : k ≥ N) :
+    twoVarFourierCoeffAt i j hij f k = 0 := by
+  unfold twoVarFourierCoeffAt
+  rw [mul_var_sub_pow_zero_of_ge i j hij f N k hf hk]
+  ext idx; show algebraMap ℚ A _ * (0 : A) = 0; exact mul_zero _
+
+end NVariable
+
 namespace FormalDelta
 
 variable {A : Type*} [CommRing A] [Algebra ℚ A]
@@ -153,9 +180,8 @@ distribution in `w`.
 ## References
 * [Nozaradan, *Introduction to Vertex Algebras*], Definition 1.5.3
 -/
-noncomputable def twoVarFourierCoeff (f : GenFormalDist2 A) (j : ℕ) : GenFormalDist1 A :=
-  algebraMap ℚ A (1 / ↑(Nat.factorial j)) •
-    GeneralizedFormalDistribution.residueAt 0 (mul_z_sub_w_pow f j)
+noncomputable abbrev twoVarFourierCoeff (f : GenFormalDist2 A) (j : ℕ) : GenFormalDist1 A :=
+  twoVarFourierCoeffAt 0 1 (by decide) f j
 
 /-- **Proposition 1.5.4** (coefficient level): The two-variable Fourier transform of
 the commutator equals the scaled j-th product.
@@ -178,10 +204,9 @@ theorem twoVarFourierCoeff_commutator_eq (a b : FormalDist1 A) (j : ℕ) :
 /-- The 0-th two-variable FT coefficient of `∂_z f` vanishes. -/
 theorem twoVarFourierCoeff_deriv_fst_zero (f : GenFormalDist2 A) :
     twoVarFourierCoeff (GeneralizedFormalDistribution.deriv f 0) 0 = 0 := by
-  unfold twoVarFourierCoeff
-  rw [show mul_z_sub_w_pow (GeneralizedFormalDistribution.deriv f 0) 0 =
-      GeneralizedFormalDistribution.deriv f 0 from rfl,
-    residueAt_deriv_fst]
+  change algebraMap ℚ A _ • GeneralizedFormalDistribution.residueAt 0
+    (GeneralizedFormalDistribution.deriv f 0) = 0
+  rw [residueAt_deriv_fst]
   ext idx; show algebraMap ℚ A _ * (0 : A) = 0; exact mul_zero _
 
 /-- **Proposition 1.5.4(2)**: The two-variable Fourier transform maps `∂_z` to
@@ -198,11 +223,15 @@ that the full two-variable FT satisfies `F(∂_z f) = -λ · F(f)`.
 theorem twoVarFourierCoeff_deriv_fst (f : GenFormalDist2 A) (j : ℕ) :
     twoVarFourierCoeff (GeneralizedFormalDistribution.deriv f 0) (j + 1) =
     -twoVarFourierCoeff f j := by
-  ext idx
+  ext idx; simp only [twoVarFourierCoeff]
   show algebraMap ℚ A (1 / ↑(Nat.factorial (j + 1))) *
-      coeff2 (mul_z_sub_w_pow (GeneralizedFormalDistribution.deriv f 0) (j + 1)) (-1) (idx 0) =
+      (GeneralizedFormalDistribution.residueAt 0
+        (mul_z_sub_w_pow (GeneralizedFormalDistribution.deriv f 0) (j + 1))).coeff idx =
     -(algebraMap ℚ A (1 / ↑(Nat.factorial j)) *
-      coeff2 (mul_z_sub_w_pow f j) (-1) (idx 0))
+      (GeneralizedFormalDistribution.residueAt 0 (mul_z_sub_w_pow f j)).coeff idx)
+  rw [GeneralizedFormalDistribution.residueAt_coeff,
+      GeneralizedFormalDistribution.residueAt_coeff]
+  change algebraMap ℚ A _ * coeff2 _ (-1) (idx 0) = -(algebraMap ℚ A _ * coeff2 _ (-1) (idx 0))
   rw [integration_by_parts, neg_mul, mul_neg, ← mul_assoc]
   congr 1; congr 1
   -- Goal: algebraMap ℚ A (1/↑((j+1)!)) * ↑(j+1) = algebraMap ℚ A (1/↑(j!))
