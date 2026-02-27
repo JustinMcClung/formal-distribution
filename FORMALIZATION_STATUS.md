@@ -1,8 +1,8 @@
 # Formalization Status: Nozaradan Chapter 1 -- Formal Calculus
 
-**11 modules** under `FormalDistribution/` | **4088 lines** | **0 errors | 0 sorry | 0 axioms**
+**11 modules** under `FormalDistribution/` | **3853 lines** | **0 errors | 0 sorry | 0 axioms**
 
-Everything below is fully proved and compiles cleanly with `lake build` (1398 jobs).
+Everything below is fully proved and compiles cleanly with `lake build` (1491 jobs).
 
 ---
 
@@ -16,12 +16,12 @@ Everything below is fully proved and compiles cleanly with `lake build` (1398 jo
 | 4 | Def 1.1.1 | `FormalTaylorSeries A vars` | Basic |
 | 5 | Def 1.1.3 | `fourierExpansion`, `fourierMode`, `residue` | Fourier |
 | 6 | Def 1.2.1 | `expansion_izw k`, `expansion_iwz k` | Expansion |
-| 7 | Def 1.2.2 | `Int.extChoose j n` | Binomial |
-| 8 | Def 1.3.1 | `formalDelta` | Delta |
-| 9 | Def 1.4.1 | `IsLocal`, `IsLocalOfOrder`, `MutuallyLocal` | Locality |
-| 10 | Rem 1.4.4 | `nthProduct` (j-th product) | Locality |
+| 7 | Def 1.2.2 | `intBinomial k n` (via Mathlib `Ring.choose`) | Binomial |
+| 8 | Def 1.3.1 | `formalDeltaPair i j hij`, `formalDelta` (2-var alias) | Delta |
+| 9 | Def 1.4.1 | `IsLocalForPairOfOrder`, `IsLocalForPair` (n-var); `IsLocal`, `IsLocalOfOrder`, `MutuallyLocal` (2-var aliases) | Locality |
+| 10 | Rem 1.4.4 | `nthProductAt i j hij` (n-var); `nthProduct` (2-var alias) | Locality |
 | 11 | Def 1.5.1 | `fourierTransformCoeff` | FourierTransform |
-| 12 | Def 1.5.3 | `twoVarFourierCoeff` | FourierTransform |
+| 12 | Def 1.5.3 | `twoVarFourierCoeffAt i j hij` (n-var); `twoVarFourierCoeff` (2-var alias) | FourierTransform |
 
 ## Type Aliases
 
@@ -106,13 +106,17 @@ Everything below is fully proved and compiles cleanly with `lake build` (1398 jo
 | `residue_eq_fourierMode_zero` | `Res(a) = fm(a, 0)` | Fourier |
 | `fourierExpansion_eq_fourierMode_neg` | `fe(a, n) = fm(a, -n-1)` | Fourier |
 
-## Theorems -- Extended Binomial Coefficients
+## Theorems -- Generalized Binomial Coefficients
 
 | Theorem | Statement | Module |
 |---------|-----------|--------|
-| `Int.extChoose_zero` | `C(j, 0) = 1` | Binomial |
-| `Int.extChoose_succ` | `C(j, n+1) = C(j, n) * (j-n) / (n+1)` | Binomial |
-| `Int.extChoose_nonneg` | `C(k, n) = Nat.choose k n` for natural k, n | Binomial |
+| `intBinomial_zero` | `C(k, 0) = 1` | Binomial |
+| `intBinomial_natCast` | `C(↑k, n) = ↑(Nat.choose k n)` for natural k, n | Binomial |
+| `intBinomial_neg_one` | `C(-1, n) = (-1)^n` | Binomial |
+| `intBinomial_zero_left` | `C(0, n+1) = 0` | Binomial |
+| `intBinomial_pascal` | `C(k+1, n+1) = C(k, n) + C(k, n+1)` | Binomial |
+| `intBinomial_mul_sub` | `(k-n) C(k,n) = k C(k-1,n)` | Binomial |
+| `intBinomial_succ_mul_eq` | `(n+1) C(k,n+1) = k C(k-1,n)` | Binomial |
 
 ## Theorems -- Expansion Operators (Proposition 1.2.6)
 
@@ -157,23 +161,12 @@ Property 7 is the falling factorial identity that generalizes Properties 1 and 2
 
 | Theorem | Statement | Module |
 |---------|-----------|--------|
+| `decomposition_theorem_pair` | N-variable: `(x_i-x_j)^N f = 0` implies decomposition via `coeffPair` | Decomposition |
 | `antidiag_const_of_mul_z_sub_w_zero` | `(z-w)f = 0` implies `f(p,q) = f(-1, p+q+1)` | Decomposition |
 | `decomposition_theorem` | `(z-w)^N f = 0` implies `f(p,q) = ∑_{j<N} C(-p-1,j) · c_j(p+q+j+1)` | Decomposition |
 
 The decomposition is formulated at the coefficient level using generalized binomial
 coefficients, avoiding division by factorials (no `[Algebra ℚ A]` required).
-
-## Theorems -- Generalized Binomial Coefficients
-
-| Theorem | Statement | Module |
-|---------|-----------|--------|
-| `intBinomial_zero` | `C(k, 0) = 1` | Binomial |
-| `intBinomial_neg_one` | `C(-1, n) = (-1)^n` | Binomial |
-| `intBinomial_zero_left` | `C(0, n+1) = 0` | Binomial |
-| `intBinomial_pascal` | `C(k+1, n+1) = C(k, n) + C(k, n+1)` | Binomial |
-| `intBinomial_mul_sub` | `(k-n) C(k,n) = k C(k-1,n)` | Binomial |
-| `intBinomial_succ_mul_eq` | `(n+1) C(k,n+1) = k C(k-1,n)` | Binomial |
-| `Int.extChoose_eq_intBinomial` | `extChoose j n = intBinomial j n` (cast to ℚ) | Binomial |
 
 ## Theorems -- Hahn Series Bridge
 
@@ -190,26 +183,32 @@ coefficients, avoiding division by factorials (no `[Algebra ℚ A]` required).
 
 ## Infrastructure
 
-### Embeddings (1D -> 2D, `CommRing A`)
+### Embeddings (1D -> nD)
 
 | Name | Description | Module |
 |------|-------------|--------|
-| `embedFst`, `embedSnd` | Embed 1D distributions into 2D | Mul |
-| `mulGen` | Mixed multiplication `FormalDist2 x GenFormalDist2 -> GenFormalDist2` | Mul |
-| `residueAt` | Residue in a specific variable of a 2D distribution | Mul |
+| `embedAt i` | Embed 1D generalized distribution into n-variable at position `i` | Basic |
+| `embedFst`, `embedSnd` | 2-variable aliases for `embedAt 0`, `embedAt 1` | Basic |
+| `mulGen` | Mixed multiplication `FormalDist2 × GenFormalDist2 → GenFormalDist2` | Basic |
+| `residueAtPair i j hij` | Residue at variable `i`, projected onto variable `j` (n-variable) | Basic |
+| `residueAt` | 2-variable alias for `residueAtPair` | Basic |
 
-### (z-w) Multiplication
+### Variable-difference multiplication (n-variable)
 
 | Name | Description | Module |
 |------|-------------|--------|
-| `mul_z_sub_w` | Multiply generalized 2D distribution by (z-w) | Delta |
-| `mul_z_sub_w_pow` | Multiply by (z-w)^j | Delta |
+| `mul_var_sub i j hij` | Multiply n-variable generalized distribution by `(x_i - x_j)` | Delta |
+| `mul_var_sub_pow i j hij` | Iterated multiplication by `(x_i - x_j)` | Delta |
+| `mul_z_sub_w` | 2-variable alias: multiply by `(z-w)` | Delta |
+| `mul_z_sub_w_pow` | 2-variable alias: multiply by `(z-w)^j` | Delta |
 | `mul_z_sub_w_smul` | Commutes with scalar multiplication | Delta |
 
-### Iterated Derivative Coefficients
+### Coefficient accessors
 
 | Name | Description | Module |
 |------|-------------|--------|
+| `coeffPair i j hij` | Access coefficient of n-variable distribution at `(p, q)` in variables `(i, j)` | Decomposition |
+| `coeff2` | Access coefficient of 2-variable distribution at `(p, q)` | Decomposition |
 | `iteratedDeriv_snd_formalDelta_coeff` | Explicit coefficient formula for d_w^n delta | Delta |
 
 ## Theorems -- Locality (Section 1.4)
@@ -220,7 +219,8 @@ coefficients, avoiding division by factorials (no `[Algebra ℚ A]` required).
 |------|-------------|--------|
 | `externalProduct` | Tensor product `a(z)b(w)` of two 1D distributions | Locality |
 | `formalCommutator` | Commutator `[a(z), b(w)] = a(z)b(w) - b(w)a(z)` | Locality |
-| `nthProduct` | j-th product `a_{(j)} b = Res_z (z-w)^j [a(z), b(w)]` | Locality |
+| `nthProductAt i j hij` | N-variable j-th product: `Res_{x_i} (x_i - x_j)^k f` | Locality |
+| `nthProduct` | 2-variable alias: `a_{(j)} b = Res_z (z-w)^j [a(z), b(w)]` | Locality |
 
 ### Example 1.4.2
 
@@ -247,7 +247,9 @@ coefficients, avoiding division by factorials (no `[Algebra ℚ A]` required).
 | Theorem | Statement | Module |
 |---------|-----------|--------|
 | `local_decomposition` | If `[a,b]` is local of order `N`, then `[a(z),b(w)] = ∑_{j<N} c_j(w) ∂^j_w δ(z,w)` | Locality |
-| `mul_z_sub_w_pow_zero_of_ge` | `(z-w)^N f = 0` and `j ≥ N` implies `(z-w)^j f = 0` | Locality |
+| `mul_var_sub_pow_zero_of_ge` | N-variable: `(x_i-x_j)^N f = 0` and `k ≥ N` implies `(x_i-x_j)^k f = 0` | Locality |
+| `mul_z_sub_w_pow_zero_of_ge` | 2-variable alias of `mul_var_sub_pow_zero_of_ge` | Locality |
+| `nthProductAt_eq_zero_of_local` | N-variable: `k ≥ N` implies j-th product vanishes | Locality |
 | `nthProduct_eq_zero_of_local` | `a_{(j)} b = 0` for `j ≥ N` when `[a,b]` is local of order `N` | Locality |
 
 ### Leibniz Rule and Integration by Parts
@@ -275,7 +277,8 @@ coefficients, avoiding division by factorials (no `[Algebra ℚ A]` required).
 | `twoVarFourierCoeff_commutator_eq` | `F_{z,w}^λ([a,b])_j = (1/j!) · a_{(j)} b` (Prop 1.5.4) | FourierTransform |
 | `twoVarFourierCoeff_deriv_fst_zero` | `F_{z,w}^λ(∂_z f)_0 = 0` | FourierTransform |
 | `twoVarFourierCoeff_deriv_fst` | `F_{z,w}^λ(∂_z f)_{j+1} = -F_{z,w}^λ(f)_j` (Prop 1.5.4(2)) | FourierTransform |
-| `twoVarFourierCoeff_eq_zero_of_local` | Lambda-bracket is polynomial for local distributions | FourierTransform |
+| `twoVarFourierCoeffAt_eq_zero_of_local` | N-variable: lambda-bracket is polynomial for local distributions | FourierTransform |
+| `twoVarFourierCoeff_eq_zero_of_local` | 2-variable alias | FourierTransform |
 
 ## Intentional Omissions
 
@@ -324,7 +327,7 @@ Sections 1.1--1.5 are formalized.
 
 ```bash
 lake build
-# Build completed successfully (1398 jobs).
+# Build completed successfully (1491 jobs).
 
 grep -rn "sorry\|axiom\|admit" FormalDistribution/
 # (No output)
