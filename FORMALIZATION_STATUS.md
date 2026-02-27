@@ -2,7 +2,7 @@
 
 **11 modules** under `FormalDistribution/` | **3853 lines** | **0 errors | 0 sorry | 0 axioms**
 
-Everything below is fully proved and compiles cleanly with `lake build` (1491 jobs).
+Everything below is fully proved and compiles cleanly with `lake build` (1498 jobs).
 
 ---
 
@@ -327,7 +327,7 @@ Sections 1.1--1.5 are formalized.
 
 ```bash
 lake build
-# Build completed successfully (1491 jobs).
+# Build completed successfully (1498 jobs).
 
 grep -rn "sorry\|axiom\|admit" FormalDistribution/
 # (No output)
