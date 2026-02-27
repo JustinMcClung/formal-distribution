@@ -36,6 +36,48 @@ open scoped BigOperators
 
 variable {A : Type*} [Ring A]
 
+/-! ## N-variable locality -/
+
+/-- A generalized n-variable distribution `f` is **local for the pair `(i, j)`** of order `N`
+if `(x_i - x_j)^N · f = 0`. -/
+def IsLocalForPairOfOrder {n : ℕ} (f : GeneralizedFormalDistribution A n)
+    (i j : Fin n) (hij : i ≠ j) (N : ℕ) : Prop :=
+  mul_var_sub_pow i j hij f N = 0
+
+/-- A generalized n-variable distribution `f` is **local for the pair `(i, j)`**
+if `(x_i - x_j)^N · f = 0` for some `N`. -/
+def IsLocalForPair {n : ℕ} (f : GeneralizedFormalDistribution A n)
+    (i j : Fin n) (hij : i ≠ j) : Prop :=
+  ∃ N, IsLocalForPairOfOrder f i j hij N
+
+/-- If `(x_i - x_j)^N · f = 0` and `k ≥ N`, then `(x_i - x_j)^k · f = 0`. -/
+theorem mul_var_sub_pow_zero_of_ge {n : ℕ} (i j : Fin n) (hij : i ≠ j)
+    (f : GeneralizedFormalDistribution A n) (N k : ℕ)
+    (hf : mul_var_sub_pow i j hij f N = 0) (hk : k ≥ N) :
+    mul_var_sub_pow i j hij f k = 0 := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le hk
+  induction m with
+  | zero => simpa using hf
+  | succ m ihm =>
+    show mul_var_sub i j hij (mul_var_sub_pow i j hij f (N + m)) = 0
+    rw [ihm (Nat.le_add_right N m)]
+    ext idx; show (0 : A) - 0 = 0; exact sub_self 0
+
+/-- The n-th product of an n-variable distribution at variables `(i, j)`:
+`Res_{x_i} (x_i - x_j)^k · f`. -/
+noncomputable def nthProductAt {n : ℕ} (i j : Fin n) (hij : i ≠ j)
+    (f : GeneralizedFormalDistribution A n) (k : ℕ) : GenFormalDist1 A :=
+  GeneralizedFormalDistribution.residueAtPair i j hij (mul_var_sub_pow i j hij f k)
+
+/-- The n-th product at `(i, j)` vanishes for `k ≥ N` when `f` is local of order `N`. -/
+theorem nthProductAt_eq_zero_of_local {n : ℕ} (i j : Fin n) (hij : i ≠ j)
+    (f : GeneralizedFormalDistribution A n) (N k : ℕ)
+    (hf : IsLocalForPairOfOrder f i j hij N) (hk : k ≥ N) :
+    nthProductAt i j hij f k = 0 := by
+  unfold nthProductAt
+  rw [mul_var_sub_pow_zero_of_ge i j hij f N k hf hk]
+  ext idx; rfl
+
 namespace FormalDelta
 
 /-! ## External product of 1D distributions -/
@@ -101,17 +143,18 @@ noncomputable def formalCommutator (a b : FormalDist1 A) : FormalDist2 A where
 /-! ## Locality -/
 
 /-- A 2D generalized formal distribution `f` is **local** if there exists `N`
-such that `(z-w)^N · f = 0`.
+such that `(z-w)^N · f = 0`. Alias for `IsLocalForPair f 0 1`.
 
 ## References
 * [Nozaradan, *Introduction to Vertex Algebras*], Definition 1.4.1
 -/
-def IsLocal (f : GenFormalDist2 A) : Prop :=
-  ∃ N : ℕ, mul_z_sub_w_pow f N = 0
+abbrev IsLocal (f : GenFormalDist2 A) : Prop :=
+  IsLocalForPair f 0 1 (by decide)
 
-/-- A 2D generalized distribution `f` is local with order at most `N`. -/
-def IsLocalOfOrder (f : GenFormalDist2 A) (N : ℕ) : Prop :=
-  mul_z_sub_w_pow f N = 0
+/-- A 2D generalized distribution `f` is local with order at most `N`.
+Alias for `IsLocalForPairOfOrder f 0 1`. -/
+abbrev IsLocalOfOrder (f : GenFormalDist2 A) (N : ℕ) : Prop :=
+  IsLocalForPairOfOrder f 0 1 (by decide) N
 
 /-- Two 1D formal distributions `a(z)` and `b(w)` are **mutually local** if
 their commutator `[a(z), b(w)] = a(z)b(w) - b(w)a(z)` is annihilated by
@@ -127,7 +170,7 @@ def MutuallyLocal (a b : FormalDist1 A) : Prop :=
 
 /-- The formal delta `δ(z,w)` is local with `N = 1`. -/
 theorem formalDelta_isLocal : IsLocal (formalDelta : GenFormalDist2 A) :=
-  ⟨1, by rw [mul_z_sub_w_pow]; exact mul_z_sub_w_formalDelta⟩
+  ⟨1, mul_z_sub_w_formalDelta⟩
 
 /-- The `n`-th derivative `∂_w^n δ(z,w)` is local with `N = n + 1`. -/
 theorem iteratedDeriv_formalDelta_isLocal (n : ℕ) :
@@ -254,7 +297,8 @@ lemma residueAt_deriv_fst (f : GenFormalDist2 A) :
     GeneralizedFormalDistribution.residueAt 0
       (GeneralizedFormalDistribution.deriv f 0) = 0 := by
   ext idx
-  change coeff2 (GeneralizedFormalDistribution.deriv f (0 : Fin 2)) (-1) (idx 0) = 0
+  rw [GeneralizedFormalDistribution.residueAt_coeff]
+  show coeff2 (GeneralizedFormalDistribution.deriv f (0 : Fin 2)) (-1) (idx 0) = 0
   rw [deriv_fst_coeff2, show (-1 : ℤ) + 1 = 0 from by omega]
   exact zero_smul _ _
 
@@ -406,14 +450,8 @@ theorem local_decomposition (f : GenFormalDist2 A) (N : ℕ) (hf : IsLocalOfOrde
 /-- If `(z-w)^N · f = 0` and `j ≥ N`, then `(z-w)^j · f = 0`. -/
 theorem mul_z_sub_w_pow_zero_of_ge (f : GenFormalDist2 A) (N j : ℕ)
     (hf : mul_z_sub_w_pow f N = 0) (hj : j ≥ N) :
-    mul_z_sub_w_pow f j = 0 := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hj
-  induction k with
-  | zero => simpa using hf
-  | succ k ih =>
-    show mul_z_sub_w (mul_z_sub_w_pow f (N + k)) = 0
-    rw [ih (Nat.le_add_right N k)]
-    exact mul_z_sub_w_zero
+    mul_z_sub_w_pow f j = 0 :=
+  mul_var_sub_pow_zero_of_ge 0 1 (by decide) f N j hf hj
 
 /-! ## j-th product (Remark 1.4.4) -/
 
@@ -436,7 +474,6 @@ theorem nthProduct_eq_zero_of_local (a b : FormalDist1 A) (N j : ℕ)
     (hlocal : IsLocalOfOrder (formalCommutator a b).toGeneralized N) (hj : j ≥ N) :
     nthProduct a b j = 0 := by
   unfold nthProduct
-  rw [mul_z_sub_w_pow_zero_of_ge _ N j hlocal hj]
-  ext idx; rfl
+  rw [mul_z_sub_w_pow_zero_of_ge _ N j hlocal hj]; ext idx; rfl
 
 end FormalDelta

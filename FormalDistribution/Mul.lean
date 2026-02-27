@@ -33,76 +33,16 @@ namespace FormalDistribution
 
 /-! ## 1D Multiplication -/
 
+/-- The integer support of a 1D distribution is finite (projection from `Fin 1 → ℤ`). -/
+lemma support_ints_unbounded (a : FormalDist1 A) :
+    {k : ℤ | a.coeff (fun _ => k) ≠ 0}.Finite :=
+  (a.support_finite.image (fun idx : Fin 1 → ℤ => idx 0)).subset
+    fun k hk => ⟨fun _ => k, hk, rfl⟩
+
 /-- The convolution support at index `n` is finite for distributions with finite support. -/
 lemma convolution_support_finite_1d (a b : FormalDist1 A) (n : ℤ) :
-    {k : ℤ | a.coeff (fun _ => k) ≠ 0 ∧ b.coeff (fun _ => n - k) ≠ 0}.Finite := by
-  have ha := a.support_finite
-  have hb := b.support_finite
-  have ha' : {k : ℤ | k ≥ 0 ∧ a.coeff (fun _ => k) ≠ 0}.Finite := by
-    have := Set.Finite.image (fun (idx : Fin 1 → ℤ) => idx 0) ha
-    apply Set.Finite.subset this
-    intro k ⟨_, hak⟩
-    use (fun _ => k)
-    exact ⟨hak, rfl⟩
-  have hb' : {m : ℤ | m ≥ 0 ∧ b.coeff (fun _ => m) ≠ 0}.Finite := by
-    have := Set.Finite.image (fun (idx : Fin 1 → ℤ) => idx 0) hb
-    apply Set.Finite.subset this
-    intro m ⟨_, hbm⟩
-    use (fun _ => m)
-    exact ⟨hbm, rfl⟩
-  have split : {k : ℤ | a.coeff (fun _ => k) ≠ 0 ∧ b.coeff (fun _ => n - k) ≠ 0} =
-              {k : ℤ | k ≥ 0 ∧ a.coeff (fun _ => k) ≠ 0 ∧ b.coeff (fun _ => n - k) ≠ 0} ∪
-              {k : ℤ | k < 0 ∧ a.coeff (fun _ => k) ≠ 0 ∧ b.coeff (fun _ => n - k) ≠ 0} := by
-    ext k
-    simp only [Set.mem_setOf_eq, Set.mem_union]
-    constructor
-    · intro ⟨hak, hbk⟩
-      by_cases h : k ≥ 0
-      · left; exact ⟨h, hak, hbk⟩
-      · right; exact ⟨by omega, hak, hbk⟩
-    · intro h
-      cases h with
-      | inl h => exact ⟨h.2.1, h.2.2⟩
-      | inr h => exact ⟨h.2.1, h.2.2⟩
-  rw [split]
-  apply Set.Finite.union
-  · have h_subset : {k : ℤ | k ≥ 0 ∧ a.coeff (fun _ => k) ≠ 0 ∧ b.coeff (fun _ => n - k) ≠ 0} ⊆
-                    {k : ℤ | k ≥ 0 ∧ a.coeff (fun _ => k) ≠ 0} := by
-      intro k ⟨hk, hak, _⟩
-      exact ⟨hk, hak⟩
-    exact Set.Finite.subset ha' h_subset
-  · by_cases hn : n ≥ 0
-    · have h_subset : {k : ℤ | k < 0 ∧ a.coeff (fun _ => k) ≠ 0 ∧ b.coeff (fun _ => n - k) ≠ 0} ⊆
-                      (fun m => n - m) '' {m : ℤ | m ≥ 0 ∧ b.coeff (fun _ => m) ≠ 0} := by
-        intro k ⟨hk, _, hbk⟩
-        use n - k
-        constructor
-        · exact ⟨by omega, hbk⟩
-        · ring
-      exact Set.Finite.subset (Set.Finite.image _ hb') h_subset
-    · have h_subset : {k : ℤ | k < 0 ∧ a.coeff (fun _ => k) ≠ 0 ∧ b.coeff (fun _ => n - k) ≠ 0} ⊆
-                     ({k : ℤ | k < 0 ∧ n - k ≥ 0 ∧ a.coeff (fun _ => k) ≠ 0 ∧ b.coeff (fun _ => n - k) ≠ 0} ∪
-                      {k : ℤ | k < 0 ∧ n - k < 0 ∧ a.coeff (fun _ => k) ≠ 0 ∧ b.coeff (fun _ => n - k) ≠ 0}) := by
-        intro k hk
-        simp only [Set.mem_setOf_eq, Set.mem_union]
-        by_cases h : n - k ≥ 0
-        · left; exact ⟨hk.1, h, hk.2.1, hk.2.2⟩
-        · right; exact ⟨hk.1, by omega, hk.2.1, hk.2.2⟩
-      apply Set.Finite.subset _ h_subset
-      apply Set.Finite.union
-      · have : {k : ℤ | k < 0 ∧ n - k ≥ 0 ∧ a.coeff (fun _ => k) ≠ 0 ∧ b.coeff (fun _ => n - k) ≠ 0} ⊆
-               (fun m => n - m) '' {m : ℤ | m ≥ 0 ∧ b.coeff (fun _ => m) ≠ 0} := by
-          intro k ⟨_, hk2, _, hbk⟩
-          use n - k
-          constructor
-          · exact ⟨hk2, hbk⟩
-          · ring
-        exact Set.Finite.subset (Set.Finite.image _ hb') this
-      · have : {k : ℤ | k < 0 ∧ n - k < 0 ∧ a.coeff (fun _ => k) ≠ 0 ∧ b.coeff (fun _ => n - k) ≠ 0} ⊆
-               Set.Ioo n 0 := by
-          intro k ⟨hk1, hk2, _, _⟩
-          exact ⟨by omega, hk1⟩
-        exact Set.Finite.subset (Set.finite_Ioo n 0) this
+    {k : ℤ | a.coeff (fun _ => k) ≠ 0 ∧ b.coeff (fun _ => n - k) ≠ 0}.Finite :=
+  (support_ints_unbounded a).subset fun _ hk => hk.1
 
 /-- Convolution coefficient for the product of 1D formal distributions. -/
 noncomputable def mulCoeff1d (a b : FormalDist1 A) (n : ℤ) : A :=
@@ -111,13 +51,8 @@ noncomputable def mulCoeff1d (a b : FormalDist1 A) (n : ℤ) : A :=
 
 /-- For any lower bound, the integer support of a 1D distribution above that bound is finite. -/
 lemma support_ints_finite (a : FormalDist1 A) (bound_val : ℤ) :
-    {k : ℤ | k ≥ bound_val ∧ a.coeff (fun _ => k) ≠ 0}.Finite := by
-  have h := a.support_finite
-  have := Set.Finite.image (fun (idx : Fin 1 → ℤ) => idx 0) h
-  apply Set.Finite.subset this
-  intro k ⟨_, hak⟩
-  use (fun _ => k)
-  exact ⟨hak, rfl⟩
+    {k : ℤ | k ≥ bound_val ∧ a.coeff (fun _ => k) ≠ 0}.Finite :=
+  (support_ints_unbounded a).subset fun _ hk => hk.2
 
 /-- The support of the product above any bound is finite. -/
 lemma mul_support_finite_1d (a b : FormalDist1 A) (bound : ℤ) :
@@ -133,17 +68,9 @@ lemma mul_support_finite_1d (a b : FormalDist1 A) (bound : ℤ) :
                                        n = k + m} := by
     intro n ⟨hn_bound, hn_ne⟩
     unfold mulCoeff1d at hn_ne
-    have ⟨k, hk_mem, hk_ne⟩ : ∃ k, k ∈ (convolution_support_finite_1d a b n).toFinset ∧
-                                    a.coeff (fun _ => k) * b.coeff (fun _ => n - k) ≠ 0 := by
-      by_contra h
-      push_neg at h
-      have : Finset.sum (convolution_support_finite_1d a b n).toFinset
-              (fun k => a.coeff (fun _ => k) * b.coeff (fun _ => n - k)) = 0 := by
-        apply Finset.sum_eq_zero
-        intro k hk
-        have := h k hk
-        exact this
-      exact hn_ne this
+    have ⟨k, hk_mem, hk_ne⟩ : ∃ k ∈ (convolution_support_finite_1d a b n).toFinset,
+        a.coeff (fun _ => k) * b.coeff (fun _ => n - k) ≠ 0 := by
+      by_contra h; push_neg at h; exact hn_ne (Finset.sum_eq_zero h)
     rw [Set.Finite.mem_toFinset] at hk_mem
     obtain ⟨hak, hbk⟩ := hk_mem
     use k, n - k
@@ -242,51 +169,19 @@ noncomputable instance : Mul (FormalDist1 A) where
   mul a b := ⟨
     fun idx => mulCoeff1d a b (idx 0),
     by
-      have ha := a.support_finite
-      have hb := b.support_finite
-      have ha_int : {k : ℤ | a.coeff (fun _ => k) ≠ 0}.Finite := by
-        apply Set.Finite.subset (Set.Finite.image (fun idx : Fin 1 → ℤ => idx 0) ha)
-        intro k hk
-        use (fun _ => k)
-        exact ⟨hk, rfl⟩
-      have hb_int : {m : ℤ | b.coeff (fun _ => m) ≠ 0}.Finite := by
-        apply Set.Finite.subset (Set.Finite.image (fun idx : Fin 1 → ℤ => idx 0) hb)
-        intro m hm
-        use (fun _ => m)
-        exact ⟨hm, rfl⟩
+      have ha_int := support_ints_unbounded a
+      have hb_int := support_ints_unbounded b
       have h_support : {n : ℤ | mulCoeff1d a b n ≠ 0}.Finite := by
-        have : {n : ℤ | mulCoeff1d a b n ≠ 0} ⊆
-               ⋃ k ∈ {k : ℤ | a.coeff (fun _ => k) ≠ 0}, {n : ℤ | b.coeff (fun _ => n - k) ≠ 0} := by
-          intro n hn
-          unfold mulCoeff1d at hn
-          have : ∃ k, k ∈ (convolution_support_finite_1d a b n).toFinset ∧
-                       a.coeff (fun _ => k) * b.coeff (fun _ => n - k) ≠ 0 := by
-            by_contra h_all_zero
-            push_neg at h_all_zero
-            have : Finset.sum (convolution_support_finite_1d a b n).toFinset
-                     (fun k => a.coeff (fun _ => k) * b.coeff (fun _ => n - k)) = 0 := by
-              apply Finset.sum_eq_zero
-              intro k hk
-              exact h_all_zero k hk
-            contradiction
-          obtain ⟨k, _, hk_ne⟩ := this
-          simp only [Set.mem_iUnion]
-          use k
-          constructor
-          · intro h_contra
-            simp [h_contra] at hk_ne
-          · intro h_contra
-            simp [h_contra] at hk_ne
-        apply Set.Finite.subset _ this
-        exact Set.Finite.biUnion ha_int (fun k _ =>
-          Set.Finite.subset (Set.Finite.image (· + k) hb_int) (by
-            intro n hn
-            use n - k
-            exact ⟨hn, by ring⟩))
-      apply Set.Finite.subset (Set.Finite.image (fun n => fun _ : Fin 1 => n) h_support)
-      intro idx hne
-      use idx 0
-      exact ⟨hne, by funext i; fin_cases i; rfl⟩
+        refine (ha_int.biUnion fun k _ =>
+          (hb_int.image (· + k)).subset fun n hn => ⟨n - k, hn, by ring⟩).subset ?_
+        intro n hn; unfold mulCoeff1d at hn
+        have ⟨k, _, hk_ne⟩ : ∃ k ∈ (convolution_support_finite_1d a b n).toFinset,
+            a.coeff (fun _ => k) * b.coeff (fun _ => n - k) ≠ 0 := by
+          by_contra h; push_neg at h; exact hn (Finset.sum_eq_zero h)
+        simp only [Set.mem_iUnion, Set.mem_setOf]
+        exact ⟨k, fun h => hk_ne (by simp [h]), fun h => hk_ne (by simp [h])⟩
+      exact (h_support.image fun n => fun _ : Fin 1 => n).subset
+        fun idx hne => ⟨idx 0, hne, by funext i; fin_cases i; rfl⟩
   ⟩
 
 /-! ### Properties of 1D multiplication -/
@@ -310,30 +205,17 @@ theorem add_mul (a b c : FormalDist1 A) : (a + b) * c = a * c + b * c := by
                = ∑ k ∈ s_union, (a + b).coeff (fun _ => k) * c.coeff (fun _ => n - k) := by
     refine Finset.sum_subset ?_ ?_
     · intro k hk
+      simp only [s_ab, Set.Finite.mem_toFinset, Set.mem_setOf] at hk
       simp only [s_union, Finset.mem_union, s_a, s_b, Set.Finite.mem_toFinset, Set.mem_setOf]
-      simp only [s_ab, Set.Finite.mem_toFinset, Set.mem_setOf] at hk
-      by_contra h
-      push_neg at h
-      have ha : a.coeff (fun _ => k) = 0 := by
-        by_cases ha' : a.coeff (fun _ => k) = 0
-        · exact ha'
-        · have := h.1 ha'
-          exact absurd this hk.2
-      have hb : b.coeff (fun _ => k) = 0 := by
-        by_cases hb' : b.coeff (fun _ => k) = 0
-        · exact hb'
-        · have := h.2 hb'
-          exact absurd this hk.2
-      have : (a + b).coeff (fun _ => k) = 0 := by
-        rw [show (a + b).coeff (fun _ => k) = a.coeff (fun _ => k) + b.coeff (fun _ => k) by rfl]
-        rw [ha, hb, zero_add]
-      exact hk.1 this
+      by_contra h; push_neg at h
+      exact hk.1 (show (a + b).coeff (fun _ => k) = 0 by
+        change a.coeff _ + b.coeff _ = 0
+        rw [show a.coeff (fun _ => k) = 0 from by_contra fun ha => hk.2 (h.1 ha)]
+        rw [show b.coeff (fun _ => k) = 0 from by_contra fun hb => hk.2 (h.2 hb)]
+        exact zero_add 0)
     · intro k _ hk
-      simp only [s_ab, Set.Finite.mem_toFinset, Set.mem_setOf] at hk
-      push_neg at hk
-      by_cases h : (a + b).coeff (fun _ => k) = 0
-      · rw [h, zero_mul]
-      · rw [hk h, mul_zero]
+      simp only [s_ab, Set.Finite.mem_toFinset, Set.mem_setOf] at hk; rw [not_and_or] at hk
+      rcases hk.imp not_not.mp not_not.mp with h | h <;> simp [h]
   rw [lhs_ext]
   conv_lhs => arg 2; ext k
               rw [show (a + b).coeff (fun _ => k) = a.coeff (fun _ => k) + b.coeff (fun _ => k) by rfl]
@@ -341,18 +223,12 @@ theorem add_mul (a b c : FormalDist1 A) : (a + b) * c = a * c + b * c := by
   congr 1
   · refine (Finset.sum_subset Finset.subset_union_left ?_).symm
     intro k _ hk
-    simp only [s_a, Set.Finite.mem_toFinset, Set.mem_setOf] at hk
-    by_cases h : a.coeff (fun _ => k) = 0
-    · rw [h, zero_mul]
-    · push_neg at hk
-      rw [hk h, mul_zero]
+    simp only [s_a, Set.Finite.mem_toFinset, Set.mem_setOf] at hk; rw [not_and_or] at hk
+    rcases hk.imp not_not.mp not_not.mp with h | h <;> simp [h]
   · refine (Finset.sum_subset Finset.subset_union_right ?_).symm
     intro k _ hk
-    simp only [s_b, Set.Finite.mem_toFinset, Set.mem_setOf] at hk
-    by_cases h : b.coeff (fun _ => k) = 0
-    · rw [h, zero_mul]
-    · push_neg at hk
-      rw [hk h, mul_zero]
+    simp only [s_b, Set.Finite.mem_toFinset, Set.mem_setOf] at hk; rw [not_and_or] at hk
+    rcases hk.imp not_not.mp not_not.mp with h | h <;> simp [h]
 
 /-- Left distributivity: `a * (b + c) = a * b + a * c`. -/
 theorem mul_add (a b c : FormalDist1 A) : a * (b + c) = a * b + a * c := by
@@ -368,46 +244,27 @@ theorem mul_add (a b c : FormalDist1 A) : a * (b + c) = a * b + a * c := by
                = ∑ k ∈ s_union, a.coeff (fun _ => k) * (b + c).coeff (fun _ => n - k) := by
     refine Finset.sum_subset ?_ ?_
     · intro k hk
+      simp only [s_bc, Set.Finite.mem_toFinset, Set.mem_setOf] at hk
       simp only [s_union, Finset.mem_union, s_b, s_c, Set.Finite.mem_toFinset, Set.mem_setOf]
-      simp only [s_bc, Set.Finite.mem_toFinset, Set.mem_setOf] at hk
-      by_contra h
-      push_neg at h
-      have hb : b.coeff (fun _ => n - k) = 0 := h.1 hk.1
-      have hc : c.coeff (fun _ => n - k) = 0 := h.2 hk.1
-      have : (b + c).coeff (fun _ => n - k) = 0 := by
-        rw [show (b + c).coeff (fun _ => n - k) = b.coeff (fun _ => n - k) + c.coeff (fun _ => n - k) by rfl]
-        rw [hb, hc, zero_add]
-      exact hk.2 this
+      by_contra h; push_neg at h
+      exact hk.2 (show (b + c).coeff (fun _ => n - k) = 0 by
+        change b.coeff _ + c.coeff _ = 0; simp [h.1 hk.1, h.2 hk.1])
     · intro k _ hk
-      simp only [s_bc, Set.Finite.mem_toFinset, Set.mem_setOf] at hk
-      push_neg at hk
-      by_cases h : a.coeff (fun _ => k) = 0
-      · rw [h, zero_mul]
-      · rw [hk h, mul_zero]
+      simp only [s_bc, Set.Finite.mem_toFinset, Set.mem_setOf] at hk; rw [not_and_or] at hk
+      rcases hk.imp not_not.mp not_not.mp with h | h <;> simp [h]
   rw [lhs_ext]
   conv_lhs => arg 2; ext k
               rw [show (b + c).coeff (fun _ => n - k) = b.coeff (fun _ => n - k) + c.coeff (fun _ => n - k) by rfl]
-  have : ∑ k ∈ s_union, a.coeff (fun _ => k) * (b.coeff (fun _ => n - k) + c.coeff (fun _ => n - k))
-       = ∑ k ∈ s_union, (a.coeff (fun _ => k) * b.coeff (fun _ => n - k) + a.coeff (fun _ => k) * c.coeff (fun _ => n - k)) := by
-    congr 1; ext k
-    show a.coeff (fun _ => k) * (b.coeff (fun _ => n - k) + c.coeff (fun _ => n - k)) = _
-    rw [_root_.mul_add]
-  rw [this, Finset.sum_add_distrib]
+  simp_rw [_root_.mul_add, Finset.sum_add_distrib]
   congr 1
   · refine (Finset.sum_subset Finset.subset_union_left ?_).symm
     intro k _ hk
-    simp only [s_b, Set.Finite.mem_toFinset, Set.mem_setOf] at hk
-    by_cases h : a.coeff (fun _ => k) = 0
-    · rw [h, zero_mul]
-    · push_neg at hk
-      rw [hk h, mul_zero]
+    simp only [s_b, Set.Finite.mem_toFinset, Set.mem_setOf] at hk; rw [not_and_or] at hk
+    rcases hk.imp not_not.mp not_not.mp with h | h <;> simp [h]
   · refine (Finset.sum_subset Finset.subset_union_right ?_).symm
     intro k _ hk
-    simp only [s_c, Set.Finite.mem_toFinset, Set.mem_setOf] at hk
-    by_cases h : a.coeff (fun _ => k) = 0
-    · rw [h, zero_mul]
-    · push_neg at hk
-      rw [hk h, mul_zero]
+    simp only [s_c, Set.Finite.mem_toFinset, Set.mem_setOf] at hk; rw [not_and_or] at hk
+    rcases hk.imp not_not.mp not_not.mp with h | h <;> simp [h]
 
 /-- Scalar multiplication commutes with multiplication from the left. -/
 theorem smul_mul (r : A) (a b : FormalDist1 A) : (r • a) * b = r • (a * b) := by
@@ -419,27 +276,16 @@ theorem smul_mul (r : A) (a b : FormalDist1 A) : (r • a) * b = r • (a * b) :
   let s_a := (convolution_support_finite_1d a b n).toFinset
   let s_union := s_ra ∪ s_a
   have lhs_ext : ∑ k ∈ s_ra, (r • a).coeff (fun _ => k) * b.coeff (fun _ => n - k)
-               = ∑ k ∈ s_union, (r • a).coeff (fun _ => k) * b.coeff (fun _ => n - k) := by
-    refine Finset.sum_subset Finset.subset_union_left ?_
-    intro k _ hk
-    simp only [s_ra, Set.Finite.mem_toFinset, Set.mem_setOf] at hk
-    by_cases h : (r • a).coeff (fun _ => k) = 0
-    · rw [h, zero_mul]
-    · push_neg at hk
-      rw [hk h, mul_zero]
+               = ∑ k ∈ s_union, (r • a).coeff (fun _ => k) * b.coeff (fun _ => n - k) :=
+    Finset.sum_subset Finset.subset_union_left fun k _ hk => by
+      simp only [s_ra, Set.Finite.mem_toFinset, Set.mem_setOf] at hk; rw [not_and_or] at hk
+      rcases hk.imp not_not.mp not_not.mp with h | h <;> simp [h]
   have rhs_ext : r • ∑ k ∈ s_a, a.coeff (fun _ => k) * b.coeff (fun _ => n - k)
                = ∑ k ∈ s_union, r • (a.coeff (fun _ => k) * b.coeff (fun _ => n - k)) := by
-    rw [Finset.smul_sum]
-    refine Finset.sum_subset Finset.subset_union_right ?_
-    intro k _ hk
-    simp only [s_a, Set.Finite.mem_toFinset, Set.mem_setOf] at hk
-    by_cases h : a.coeff (fun _ => k) = 0
-    · rw [h, zero_mul, smul_zero]
-    · push_neg at hk
-      rw [hk h, mul_zero, smul_zero]
-  rw [lhs_ext, rhs_ext]
-  congr 1
-  ext k
+    rw [Finset.smul_sum]; exact Finset.sum_subset Finset.subset_union_right fun k _ hk => by
+      simp only [s_a, Set.Finite.mem_toFinset, Set.mem_setOf] at hk; rw [not_and_or] at hk
+      rcases hk.imp not_not.mp not_not.mp with h | h <;> simp [h]
+  rw [lhs_ext, rhs_ext]; congr 1; ext k
   simp only [show (r • a).coeff (fun _ => k) = r • a.coeff (fun _ => k) by rfl, smul_mul_assoc]
 
 /-- Scalar multiplication commutes with multiplication from the right (commutative ring). -/
@@ -453,32 +299,18 @@ theorem mul_smul {A : Type*} [CommRing A] (r : A) (a b : FormalDist1 A) :
   let s_b := (convolution_support_finite_1d a b n).toFinset
   let s_union := s_rb ∪ s_b
   have lhs_ext : ∑ k ∈ s_rb, a.coeff (fun _ => k) * (r • b).coeff (fun _ => n - k)
-               = ∑ k ∈ s_union, a.coeff (fun _ => k) * (r • b).coeff (fun _ => n - k) := by
-    refine Finset.sum_subset Finset.subset_union_left ?_
-    intro k _ hk
-    simp only [s_rb, Set.Finite.mem_toFinset, Set.mem_setOf] at hk
-    by_cases h : a.coeff (fun _ => k) = 0
-    · rw [h, zero_mul]
-    · push_neg at hk
-      rw [hk h, mul_zero]
+               = ∑ k ∈ s_union, a.coeff (fun _ => k) * (r • b).coeff (fun _ => n - k) :=
+    Finset.sum_subset Finset.subset_union_left fun k _ hk => by
+      simp only [s_rb, Set.Finite.mem_toFinset, Set.mem_setOf] at hk; rw [not_and_or] at hk
+      rcases hk.imp not_not.mp not_not.mp with h | h <;> simp [h]
   have rhs_ext : r • ∑ k ∈ s_b, a.coeff (fun _ => k) * b.coeff (fun _ => n - k)
                = ∑ k ∈ s_union, r • (a.coeff (fun _ => k) * b.coeff (fun _ => n - k)) := by
-    rw [Finset.smul_sum]
-    refine Finset.sum_subset Finset.subset_union_right ?_
-    intro k _ hk
-    simp only [s_b, Set.Finite.mem_toFinset, Set.mem_setOf] at hk
-    by_cases h : a.coeff (fun _ => k) = 0
-    · rw [h, zero_mul, smul_zero]
-    · push_neg at hk
-      rw [hk h, mul_zero, smul_zero]
-  rw [lhs_ext, rhs_ext]
-  congr 1
-  ext k
-  rw [show (r • b).coeff (fun _ => n - k) = r • b.coeff (fun _ => n - k) by rfl]
-  rw [show r • b.coeff (fun _ => n - k) = r * b.coeff (fun _ => n - k) by rfl]
-  rw [show r • (a.coeff (fun _ => k) * b.coeff (fun _ => n - k)) =
-           r * (a.coeff (fun _ => k) * b.coeff (fun _ => n - k)) by rfl]
-  rw [← mul_assoc, mul_comm (a.coeff (fun _ => k)) r, mul_assoc]
+    rw [Finset.smul_sum]; exact Finset.sum_subset Finset.subset_union_right fun k _ hk => by
+      simp only [s_b, Set.Finite.mem_toFinset, Set.mem_setOf] at hk; rw [not_and_or] at hk
+      rcases hk.imp not_not.mp not_not.mp with h | h <;> simp [h]
+  rw [lhs_ext, rhs_ext]; congr 1; ext k
+  show a.coeff _ * (r • b.coeff _) = r • (a.coeff _ * b.coeff _)
+  rw [smul_eq_mul, smul_eq_mul, ← mul_assoc, mul_comm (a.coeff _) r, mul_assoc]
 
 /-- Multiplication by zero from the left. -/
 theorem zero_mul (a : FormalDist1 A) : (0 : FormalDist1 A) * a = 0 := by
@@ -696,54 +528,32 @@ theorem add_mul_2d (a b c : FormalDist2 A) : (a + b) * c = a * c + b * c := by
                                 c.coeff (fun i => if i = 0 then idx 0 - p.1 else idx 1 - p.2) := by
     refine Finset.sum_subset ?_ ?_
     · intro ⟨k, l⟩ hkl
+      simp only [s_ab, Set.Finite.mem_toFinset, Set.mem_setOf] at hkl
       simp only [s_union, Finset.mem_union, s_a, s_b, Set.Finite.mem_toFinset, Set.mem_setOf]
-      simp only [s_ab, Set.Finite.mem_toFinset, Set.mem_setOf] at hkl
-      by_contra h
-      push_neg at h
-      have ha : a.coeff (fun i => if i = 0 then k else l) = 0 := by
-        by_cases ha' : a.coeff (fun i => if i = 0 then k else l) = 0
-        · exact ha'
-        · have := h.1 ha'
-          exact absurd this hkl.2
-      have hb : b.coeff (fun i => if i = 0 then k else l) = 0 := by
-        by_cases hb' : b.coeff (fun i => if i = 0 then k else l) = 0
-        · exact hb'
-        · have := h.2 hb'
-          exact absurd this hkl.2
-      have : (a + b).coeff (fun i => if i = 0 then k else l) = 0 := by
-        rw [show (a + b).coeff (fun i => if i = 0 then k else l) =
-                 a.coeff (fun i => if i = 0 then k else l) +
-                 b.coeff (fun i => if i = 0 then k else l) by rfl]
-        rw [ha, hb, zero_add]
-      exact hkl.1 this
+      by_contra h; push_neg at h
+      exact hkl.1 (show (a + b).coeff (fun i => if i = 0 then k else l) = 0 by
+        change a.coeff _ + b.coeff _ = 0
+        rw [show a.coeff _ = 0 from by_contra fun ha => hkl.2 (h.1 ha)]
+        rw [show b.coeff _ = 0 from by_contra fun hb => hkl.2 (h.2 hb)]
+        exact zero_add 0)
     · intro ⟨k, l⟩ _ hkl
-      simp only [s_ab, Set.Finite.mem_toFinset, Set.mem_setOf] at hkl
-      push_neg at hkl
-      by_cases h : (a + b).coeff (fun i => if i = 0 then k else l) = 0
-      · simp [h]
-      · simp [hkl h]
+      simp only [s_ab, Set.Finite.mem_toFinset, Set.mem_setOf] at hkl; rw [not_and_or] at hkl
+      rcases hkl.imp not_not.mp not_not.mp with h | h <;> simp [h]
   rw [lhs_ext]
-  conv_lhs =>
-    arg 2
-    ext x
-    rw [show (a + b).coeff (fun i => if i = 0 then x.1 else x.2) =
-             a.coeff (fun i => if i = 0 then x.1 else x.2) +
-             b.coeff (fun i => if i = 0 then x.1 else x.2) by rfl]
-    rw [_root_.add_mul]
+  conv_lhs => arg 2; ext x
+              rw [show (a + b).coeff (fun i => if i = 0 then x.1 else x.2) =
+                       a.coeff (fun i => if i = 0 then x.1 else x.2) +
+                       b.coeff (fun i => if i = 0 then x.1 else x.2) by rfl, _root_.add_mul]
   rw [Finset.sum_add_distrib]
   congr 1
   · refine (Finset.sum_subset Finset.subset_union_left ?_).symm
     intro ⟨k, l⟩ _ hkl
-    simp only [s_a, Set.Finite.mem_toFinset, Set.mem_setOf] at hkl
-    by_cases h : a.coeff (fun i => if i = 0 then k else l) = 0
-    · simp [h]
-    · push_neg at hkl; simp [hkl h]
+    simp only [s_a, Set.Finite.mem_toFinset, Set.mem_setOf] at hkl; rw [not_and_or] at hkl
+    rcases hkl.imp not_not.mp not_not.mp with h | h <;> simp [h]
   · refine (Finset.sum_subset Finset.subset_union_right ?_).symm
     intro ⟨k, l⟩ _ hkl
-    simp only [s_b, Set.Finite.mem_toFinset, Set.mem_setOf] at hkl
-    by_cases h : b.coeff (fun i => if i = 0 then k else l) = 0
-    · simp [h]
-    · push_neg at hkl; simp [hkl h]
+    simp only [s_b, Set.Finite.mem_toFinset, Set.mem_setOf] at hkl; rw [not_and_or] at hkl
+    rcases hkl.imp not_not.mp not_not.mp with h | h <;> simp [h]
 
 /-- Left distributivity for 2D: `a * (b + c) = a * b + a * c`. -/
 theorem mul_add_2d (a b c : FormalDist2 A) : a * (b + c) = a * b + a * c := by
@@ -761,52 +571,29 @@ theorem mul_add_2d (a b c : FormalDist2 A) : a * (b + c) = a * b + a * c := by
                                 (b + c).coeff (fun i => if i = 0 then idx 0 - p.1 else idx 1 - p.2) := by
     refine Finset.sum_subset ?_ ?_
     · intro ⟨k, l⟩ hkl
-      simp only [s_union, Finset.mem_union]
       simp only [s_a_bc, Set.Finite.mem_toFinset, Set.mem_setOf] at hkl
-      by_contra h
-      simp only [s_ab, s_ac, Set.Finite.mem_toFinset, Set.mem_setOf] at h
-      push_neg at h
-      have ha : a.coeff (fun i => if i = 0 then k else l) ≠ 0 := by
-        intro ha_eq
-        simp [ha_eq] at hkl
-      have hb : b.coeff (fun i => if i = 0 then idx 0 - k else idx 1 - l) = 0 := h.1 ha
-      have hc : c.coeff (fun i => if i = 0 then idx 0 - k else idx 1 - l) = 0 := h.2 ha
-      have h_sum_zero : (b + c).coeff (fun i => if i = 0 then idx 0 - k else idx 1 - l) = 0 := by
-        rw [show (b + c).coeff (fun i => if i = 0 then idx 0 - k else idx 1 - l) =
-                 b.coeff (fun i => if i = 0 then idx 0 - k else idx 1 - l) +
-                 c.coeff (fun i => if i = 0 then idx 0 - k else idx 1 - l) by rfl]
-        simp [hb, hc]
-      simp [h_sum_zero] at hkl
+      simp only [s_union, Finset.mem_union, s_ab, s_ac, Set.Finite.mem_toFinset, Set.mem_setOf]
+      by_contra h; push_neg at h
+      have ha : a.coeff (fun i => if i = 0 then k else l) ≠ 0 := fun h' => by simp [h'] at hkl
+      exact hkl.2 (show (b + c).coeff _ = 0 by change b.coeff _ + c.coeff _ = 0; simp [h.1 ha, h.2 ha])
     · intro ⟨k, l⟩ _ hkl
-      simp only [s_a_bc, Set.Finite.mem_toFinset, Set.mem_setOf] at hkl
-      push_neg at hkl
-      by_cases ha : a.coeff (fun i => if i = 0 then k else l) = 0
-      · simp [ha]
-      · simp [hkl ha]
+      simp only [s_a_bc, Set.Finite.mem_toFinset, Set.mem_setOf] at hkl; rw [not_and_or] at hkl
+      rcases hkl.imp not_not.mp not_not.mp with h | h <;> simp [h]
   rw [lhs_ext]
-  conv_lhs =>
-    arg 2
-    ext x
-    rw [show (b + c).coeff (fun i => if i = 0 then idx 0 - x.1 else idx 1 - x.2) =
-             b.coeff (fun i => if i = 0 then idx 0 - x.1 else idx 1 - x.2) +
-             c.coeff (fun i => if i = 0 then idx 0 - x.1 else idx 1 - x.2) by rfl]
-    rw [_root_.mul_add]
+  conv_lhs => arg 2; ext x
+              rw [show (b + c).coeff (fun i => if i = 0 then idx 0 - x.1 else idx 1 - x.2) =
+                       b.coeff (fun i => if i = 0 then idx 0 - x.1 else idx 1 - x.2) +
+                       c.coeff (fun i => if i = 0 then idx 0 - x.1 else idx 1 - x.2) by rfl, _root_.mul_add]
   rw [Finset.sum_add_distrib]
   congr 1
   · refine (Finset.sum_subset Finset.subset_union_left ?_).symm
     intro ⟨k, l⟩ _ hkl
-    simp only [s_ab, Set.Finite.mem_toFinset, Set.mem_setOf] at hkl
-    push_neg at hkl
-    by_cases ha : a.coeff (fun i => if i = 0 then k else l) = 0
-    · simp [ha]
-    · simp [hkl ha]
+    simp only [s_ab, Set.Finite.mem_toFinset, Set.mem_setOf] at hkl; rw [not_and_or] at hkl
+    rcases hkl.imp not_not.mp not_not.mp with h | h <;> simp [h]
   · refine (Finset.sum_subset Finset.subset_union_right ?_).symm
     intro ⟨k, l⟩ _ hkl
-    simp only [s_ac, Set.Finite.mem_toFinset, Set.mem_setOf] at hkl
-    push_neg at hkl
-    by_cases ha : a.coeff (fun i => if i = 0 then k else l) = 0
-    · simp [ha]
-    · simp [hkl ha]
+    simp only [s_ac, Set.Finite.mem_toFinset, Set.mem_setOf] at hkl; rw [not_and_or] at hkl
+    rcases hkl.imp not_not.mp not_not.mp with h | h <;> simp [h]
 
 /-- Scalar multiplication commutes with left 2D multiplication. -/
 theorem smul_mul_2d (r : A) (a b : FormalDist2 A) : (r • a) * b = r • (a * b) := by
@@ -819,32 +606,23 @@ theorem smul_mul_2d (r : A) (a b : FormalDist2 A) : (r • a) * b = r • (a * b
   have lhs_ext : ∑ p ∈ s_ra, (r • a).coeff (fun i => if i = 0 then p.1 else p.2) *
                               b.coeff (fun i => if i = 0 then idx 0 - p.1 else idx 1 - p.2) =
                  ∑ p ∈ s_union, (r • a).coeff (fun i => if i = 0 then p.1 else p.2) *
-                                b.coeff (fun i => if i = 0 then idx 0 - p.1 else idx 1 - p.2) := by
-    refine Finset.sum_subset Finset.subset_union_left ?_
-    intro ⟨k, l⟩ _ hk
-    simp only [s_ra, Set.Finite.mem_toFinset, Set.mem_setOf] at hk
-    by_cases h : (r • a).coeff (fun i => if i = 0 then k else l) = 0
-    · simp [h]
-    · push_neg at hk; simp [hk h]
+                                b.coeff (fun i => if i = 0 then idx 0 - p.1 else idx 1 - p.2) :=
+    Finset.sum_subset Finset.subset_union_left fun ⟨k, l⟩ _ hk => by
+      simp only [s_ra, Set.Finite.mem_toFinset, Set.mem_setOf] at hk; rw [not_and_or] at hk
+      rcases hk.imp not_not.mp not_not.mp with h | h <;> simp [h]
   have rhs_ext : r • ∑ p ∈ s_a, a.coeff (fun i => if i = 0 then p.1 else p.2) *
                                  b.coeff (fun i => if i = 0 then idx 0 - p.1 else idx 1 - p.2) =
                  ∑ p ∈ s_union, r • (a.coeff (fun i => if i = 0 then p.1 else p.2) *
                                      b.coeff (fun i => if i = 0 then idx 0 - p.1 else idx 1 - p.2)) := by
-    rw [Finset.smul_sum]
-    refine Finset.sum_subset Finset.subset_union_right ?_
-    intro ⟨k, l⟩ _ hk
-    simp only [s_a, Set.Finite.mem_toFinset, Set.mem_setOf] at hk
-    by_cases h : a.coeff (fun i => if i = 0 then k else l) = 0
-    · simp [h]
-    · push_neg at hk; simp [hk h]
+    rw [Finset.smul_sum]; exact Finset.sum_subset Finset.subset_union_right fun ⟨k, l⟩ _ hk => by
+      simp only [s_a, Set.Finite.mem_toFinset, Set.mem_setOf] at hk; rw [not_and_or] at hk
+      rcases hk.imp not_not.mp not_not.mp with h | h <;> simp [h]
   rw [lhs_ext]
   show ∑ p ∈ s_union, (r • a).coeff (fun i => if i = 0 then p.1 else p.2) *
                        b.coeff (fun i => if i = 0 then idx 0 - p.1 else idx 1 - p.2) =
        r • ∑ p ∈ s_a, a.coeff (fun i => if i = 0 then p.1 else p.2) *
                       b.coeff (fun i => if i = 0 then idx 0 - p.1 else idx 1 - p.2)
-  rw [rhs_ext]
-  congr 1
-  ext ⟨k, l⟩
+  rw [rhs_ext]; congr 1; ext ⟨k, l⟩
   simp only [show (r • a).coeff (fun i => if i = 0 then k else l) =
                   r • a.coeff (fun i => if i = 0 then k else l) by rfl, smul_mul_assoc]
 
@@ -859,96 +637,81 @@ theorem mul_smul_2d (r : A) (a b : FormalDist2 A) : a * (r • b) = r • (a * b
   have lhs_ext : ∑ p ∈ s_rb, a.coeff (fun i => if i = 0 then p.1 else p.2) *
                               (r • b).coeff (fun i => if i = 0 then idx 0 - p.1 else idx 1 - p.2) =
                  ∑ p ∈ s_union, a.coeff (fun i => if i = 0 then p.1 else p.2) *
-                                (r • b).coeff (fun i => if i = 0 then idx 0 - p.1 else idx 1 - p.2) := by
-    refine Finset.sum_subset Finset.subset_union_left ?_
-    intro ⟨k, l⟩ _ hk
-    simp only [s_rb, Set.Finite.mem_toFinset, Set.mem_setOf] at hk
-    by_cases h : a.coeff (fun i => if i = 0 then k else l) = 0
-    · simp [h]
-    · push_neg at hk; simp [hk h]
+                                (r • b).coeff (fun i => if i = 0 then idx 0 - p.1 else idx 1 - p.2) :=
+    Finset.sum_subset Finset.subset_union_left fun ⟨k, l⟩ _ hk => by
+      simp only [s_rb, Set.Finite.mem_toFinset, Set.mem_setOf] at hk; rw [not_and_or] at hk
+      rcases hk.imp not_not.mp not_not.mp with h | h <;> simp [h]
   have rhs_ext : r • ∑ p ∈ s_b, a.coeff (fun i => if i = 0 then p.1 else p.2) *
                                  b.coeff (fun i => if i = 0 then idx 0 - p.1 else idx 1 - p.2) =
                  ∑ p ∈ s_union, r • (a.coeff (fun i => if i = 0 then p.1 else p.2) *
                                      b.coeff (fun i => if i = 0 then idx 0 - p.1 else idx 1 - p.2)) := by
-    rw [Finset.smul_sum]
-    refine Finset.sum_subset Finset.subset_union_right ?_
-    intro ⟨k, l⟩ _ hk
-    simp only [s_b, Set.Finite.mem_toFinset, Set.mem_setOf] at hk
-    by_cases h : a.coeff (fun i => if i = 0 then k else l) = 0
-    · simp [h]
-    · push_neg at hk; simp [hk h]
+    rw [Finset.smul_sum]; exact Finset.sum_subset Finset.subset_union_right fun ⟨k, l⟩ _ hk => by
+      simp only [s_b, Set.Finite.mem_toFinset, Set.mem_setOf] at hk; rw [not_and_or] at hk
+      rcases hk.imp not_not.mp not_not.mp with h | h <;> simp [h]
   rw [lhs_ext]
   show ∑ p ∈ s_union, a.coeff (fun i => if i = 0 then p.1 else p.2) *
                        (r • b).coeff (fun i => if i = 0 then idx 0 - p.1 else idx 1 - p.2) =
        r • ∑ p ∈ s_b, a.coeff (fun i => if i = 0 then p.1 else p.2) *
                       b.coeff (fun i => if i = 0 then idx 0 - p.1 else idx 1 - p.2)
-  rw [rhs_ext]
-  congr 1
-  ext ⟨k, l⟩
-  rw [show (r • b).coeff (fun i => if i = 0 then idx 0 - k else idx 1 - l) =
-           r • b.coeff (fun i => if i = 0 then idx 0 - k else idx 1 - l) by rfl]
-  rw [show r • b.coeff (fun i => if i = 0 then idx 0 - k else idx 1 - l) =
-           r * b.coeff (fun i => if i = 0 then idx 0 - k else idx 1 - l) by rfl]
-  rw [show r • (a.coeff (fun i => if i = 0 then k else l) *
-                b.coeff (fun i => if i = 0 then idx 0 - k else idx 1 - l)) =
-           r * (a.coeff (fun i => if i = 0 then k else l) *
-                b.coeff (fun i => if i = 0 then idx 0 - k else idx 1 - l)) by rfl]
-  ring
+  rw [rhs_ext]; congr 1; ext ⟨k, l⟩
+  show a.coeff _ * (r • b.coeff _) = r • (a.coeff _ * b.coeff _)
+  rw [smul_eq_mul, smul_eq_mul, ← mul_assoc, mul_comm (a.coeff _) r, mul_assoc]
 
-/-! ### Embeddings: 1D → 2D -/
+/-! ### Embeddings: 1D → n-variable -/
 
-/-- Embed a 1D distribution into 2D in the first variable (concentrated at second variable = 0).
-
-For `a(z) = ∑ aₖ zᵏ`, this produces a 2D distribution with coefficient `aₖ` at `(k, 0)`. -/
-noncomputable def embedFst (a : FormalDist1 A) : FormalDist2 A where
-  coeff := fun idx => if idx 1 = 0 then a.coeff (fun _ => idx 0) else 0
+/-- Embed a 1D distribution into an n-variable distribution at position `i`,
+setting all other variables to 0. -/
+noncomputable def embedAt {n : ℕ} (i : Fin n) (a : FormalDist1 A) : FormalDistribution A n where
+  coeff := fun idx => if ∀ j, j ≠ i → idx j = 0 then a.coeff (fun _ => idx i) else 0
   support_finite := by
-    have ha := a.support_finite
-    have : {idx : Fin 2 → ℤ | (if idx 1 = 0 then a.coeff (fun _ => idx 0) else 0) ≠ 0} ⊆
-           (fun idx_a : Fin 1 → ℤ => fun i : Fin 2 => if i = 0 then idx_a 0 else 0) ''
-             {idx_a : Fin 1 → ℤ | a.coeff idx_a ≠ 0} := by
-      intro idx hne
-      simp only [Set.mem_setOf_eq] at hne
-      by_cases h : idx 1 = 0
-      · have hne' : a.coeff (fun _ => idx 0) ≠ 0 := by simpa [h] using hne
-        use (fun _ => idx 0)
-        exact ⟨hne', by funext i; fin_cases i <;> simp [h]⟩
-      · simp [h] at hne
-    exact Set.Finite.subset (Set.Finite.image _ ha) this
+    apply (a.support_finite.image (fun k : Fin 1 → ℤ => fun j : Fin n => if j = i then k 0 else 0)).subset
+    intro idx hne; simp only [Set.mem_setOf_eq] at hne
+    split_ifs at hne with hzero
+    · refine ⟨fun _ => idx i, hne, ?_⟩
+      ext j; simp only; split_ifs with hj <;> [rw [hj]; exact (hzero j hj).symm]
+    · simp at hne
 
-/-- Embed a 1D distribution into 2D in the second variable (concentrated at first variable = 0).
+/-- Embed in the first variable (alias for `embedAt 0`). -/
+noncomputable abbrev embedFst : FormalDist1 A → FormalDist2 A := embedAt 0
 
-For `a(w) = ∑ aₗ wˡ`, this produces a 2D distribution with coefficient `aₗ` at `(0, l)`. -/
-noncomputable def embedSnd (a : FormalDist1 A) : FormalDist2 A where
-  coeff := fun idx => if idx 0 = 0 then a.coeff (fun _ => idx 1) else 0
-  support_finite := by
-    have ha := a.support_finite
-    have : {idx : Fin 2 → ℤ | (if idx 0 = 0 then a.coeff (fun _ => idx 1) else 0) ≠ 0} ⊆
-           (fun idx_a : Fin 1 → ℤ => fun i : Fin 2 => if i = 0 then 0 else idx_a 0) ''
-             {idx_a : Fin 1 → ℤ | a.coeff idx_a ≠ 0} := by
-      intro idx hne
-      simp only [Set.mem_setOf_eq] at hne
-      by_cases h : idx 0 = 0
-      · have hne' : a.coeff (fun _ => idx 1) ≠ 0 := by simpa [h] using hne
-        use (fun _ => idx 1)
-        exact ⟨hne', by funext i; fin_cases i <;> simp [h]⟩
-      · simp [h] at hne
-    exact Set.Finite.subset (Set.Finite.image _ ha) this
+/-- Embed in the second variable (alias for `embedAt 1`). -/
+noncomputable abbrev embedSnd : FormalDist1 A → FormalDist2 A := embedAt 1
+
+/-- Coefficient of `FormalDistribution.embedAt`. -/
+@[simp] lemma embedAt_coeff {n : ℕ} (i : Fin n) (a : FormalDist1 A) (idx : Fin n → ℤ) :
+    (embedAt i a).coeff idx = if ∀ j, j ≠ i → idx j = 0 then a.coeff (fun _ => idx i) else 0 := rfl
+
+/-- For 2-variable embeddings, the condition simplifies to checking a single variable. -/
+lemma embedFst_coeff' (a : FormalDist1 A) (idx : Fin 2 → ℤ) :
+    (embedFst a).coeff idx = if idx 1 = 0 then a.coeff (fun _ => idx 0) else 0 := by
+  simp only [embedFst, embedAt_coeff]
+  congr 1; ext; constructor
+  · intro h; exact h 1 (by decide)
+  · intro h j hj; exact (by fin_cases j <;> [exact absurd rfl hj; exact h])
+
+lemma embedSnd_coeff' (a : FormalDist1 A) (idx : Fin 2 → ℤ) :
+    (embedSnd a).coeff idx = if idx 0 = 0 then a.coeff (fun _ => idx 1) else 0 := by
+  simp only [embedSnd, embedAt_coeff]
+  congr 1; ext; constructor
+  · intro h; exact h 0 (by decide)
+  · intro h j hj; exact (by fin_cases j <;> [exact h; exact absurd rfl hj])
 
 /-! ### Residue in specific variable -/
 
-/-- Extract the residue (coefficient of `z^{-1}`) in a specific variable from a 2D distribution. -/
-noncomputable def residueAt (i : Fin 2) (a : FormalDist2 A) : FormalDist1 A where
-  coeff := fun idx => a.coeff (fun j => if j = i then -1 else idx 0)
+/-- Extract the residue at variable `i` from an n-variable distribution,
+projecting remaining variables onto variable `j`. -/
+noncomputable def residueAtPair {n : ℕ} (i j : Fin n) (hij : i ≠ j) (a : FormalDistribution A n) :
+    FormalDist1 A where
+  coeff := fun idx => a.coeff (fun k => if k = i then -1 else if k = j then idx 0 else 0)
   support_finite := by
-    have ha := a.support_finite
-    let proj : (Fin 2 → ℤ) → (Fin 1 → ℤ) := fun idx2 => fun _ => idx2 (if i = 0 then 1 else 0)
-    have : {idx : Fin 1 → ℤ | a.coeff (fun j => if j = i then -1 else idx 0) ≠ 0} ⊆
-           proj '' {idx2 : Fin 2 → ℤ | a.coeff idx2 ≠ 0} := by
-      intro idx hne
-      use (fun j => if j = i then -1 else idx 0)
-      exact ⟨hne, by unfold proj; funext j; fin_cases j; fin_cases i <;> rfl⟩
-    exact Set.Finite.subset (Set.Finite.image _ ha) this
+    apply (a.support_finite.image (fun f : Fin n → ℤ => fun _ : Fin 1 => f j)).subset
+    intro idx hne; simp only [Set.mem_setOf_eq] at hne
+    exact ⟨fun k => if k = i then -1 else if k = j then idx 0 else 0,
+      hne, by funext k; fin_cases k; simp [hij.symm]⟩
+
+/-- Extract the residue in a specific variable from a 2D distribution (alias). -/
+noncomputable abbrev residueAt (i : Fin 2) (a : FormalDist2 A) : FormalDist1 A :=
+  residueAtPair i (if i = 0 then 1 else 0) (by fin_cases i <;> decide) a
 
 end CommRing
 

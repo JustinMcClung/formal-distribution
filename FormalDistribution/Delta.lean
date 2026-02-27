@@ -33,60 +33,111 @@ proves all seven properties from Proposition 1.3.5.
 
 variable {A : Type*} [Ring A]
 
-/-! ## 1.3 Formal delta distribution -/
+/-! ## Multiplication by variable differences (n-variable) -/
 
-/-- The formal delta distribution `δ(z,w) = ∑_{n ∈ ℤ} z^n w^{-n-1}`.
+/-- Multiplication by `(x_i - x_j)` on n-variable generalized distributions.
 
-The formal delta has infinite support along the anti-diagonal `{(n, -n-1) | n ∈ ℤ}`,
-so it is defined as a `GeneralizedFormalDistribution` rather than a `FormalDistribution`.
+`((x_i - x_j) · a)(idx) = a(idx with idx_i - 1) - a(idx with idx_j - 1)` -/
+def mul_var_sub {n : ℕ} (i j : Fin n) (_hij : i ≠ j)
+    (a : GeneralizedFormalDistribution A n) : GeneralizedFormalDistribution A n where
+  coeff := fun idx =>
+    a.coeff (Function.update idx i (idx i - 1)) -
+    a.coeff (Function.update idx j (idx j - 1))
+  support_finite := fun bound => by
+    have shift_mem (k : Fin n) (idx : Fin n → ℤ)
+        (hge : ∀ i, idx i ≥ bound i) (hne : a.coeff (Function.update idx k (idx k - 1)) ≠ 0) :
+        idx ∈ (fun idx' => Function.update idx' k (idx' k + 1)) ''
+          {f | (∀ i, f i ≥ (Function.update bound k (bound k - 1)) i) ∧ a.coeff f ≠ 0} := by
+      refine ⟨Function.update idx k (idx k - 1), ⟨fun i => ?_, hne⟩, ?_⟩
+      · by_cases hi : i = k <;> simp [Function.update, hi] <;> [linarith [hge k]; exact hge i]
+      · ext i; by_cases hi : i = k <;> simp [Function.update, hi]
+    apply Set.Finite.subset ((a.support_finite (Function.update bound i (bound i - 1))).image _
+      |>.union ((a.support_finite (Function.update bound j (bound j - 1))).image _))
+    intro idx ⟨hge, hne⟩
+    by_cases h0 : a.coeff (Function.update idx i (idx i - 1)) ≠ 0
+    · exact Or.inl (shift_mem i idx hge h0)
+    · exact Or.inr (shift_mem j idx hge
+        (by push_neg at h0; intro h1; exact hne (by simp [h0, h1])))
 
-This satisfies the fundamental property `Res_z a(z)δ(z,w) = a(w)`.
+/-- Iterated multiplication by `(x_i - x_j)`. -/
+def mul_var_sub_pow {n : ℕ} (i j : Fin n) (hij : i ≠ j)
+    (a : GeneralizedFormalDistribution A n) : ℕ → GeneralizedFormalDistribution A n
+  | 0 => a
+  | k + 1 => mul_var_sub i j hij (mul_var_sub_pow i j hij a k)
+
+/-- `mul_var_sub` commutes with scalar multiplication. -/
+theorem mul_var_sub_smul {n : ℕ} (i j : Fin n) (hij : i ≠ j) (c : A)
+    (a : GeneralizedFormalDistribution A n) :
+    mul_var_sub i j hij (c • a) = c • mul_var_sub i j hij a := by
+  ext idx; show c • a.coeff _ - c • a.coeff _ = c • (a.coeff _ - a.coeff _)
+  rw [smul_sub]
+
+/-- Iteration commutes: `f^{k+1}(a) = f^k(f(a))`. -/
+theorem mul_var_sub_pow_succ {n : ℕ} (i j : Fin n) (hij : i ≠ j)
+    (a : GeneralizedFormalDistribution A n) (k : ℕ) :
+    mul_var_sub_pow i j hij a (k + 1) =
+    mul_var_sub_pow i j hij (mul_var_sub i j hij a) k := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    show mul_var_sub i j hij (mul_var_sub_pow i j hij a (k + 1)) =
+         mul_var_sub i j hij (mul_var_sub_pow i j hij (mul_var_sub i j hij a) k)
+    rw [ih]
+
+/-- Iteration distributes over scalar multiplication. -/
+theorem smul_mul_var_sub_pow {n : ℕ} (i j : Fin n) (hij : i ≠ j)
+    (m : ℕ) (c : A) (a : GeneralizedFormalDistribution A n) :
+    mul_var_sub_pow i j hij (c • a) m = c • mul_var_sub_pow i j hij a m := by
+  induction m with
+  | zero => rfl
+  | succ m ihm =>
+    show mul_var_sub i j hij (mul_var_sub_pow i j hij (c • a) m) =
+         c • mul_var_sub i j hij (mul_var_sub_pow i j hij a m)
+    rw [ihm, mul_var_sub_smul]
+
+/-! ## Formal delta distribution (n-variable and 2-variable) -/
+
+/-- The formal delta distribution in variables `i` and `j` of an n-variable space.
+
+`δ(z_i, z_j)` has support on `{idx | idx_i + idx_j + 1 = 0}` with all other indices zero. -/
+noncomputable def formalDeltaPair {n : ℕ} (i j : Fin n) (hij : i ≠ j) :
+    GeneralizedFormalDistribution A n where
+  coeff := fun idx =>
+    if idx i + idx j + 1 = 0 ∧ (∀ k, k ≠ i → k ≠ j → idx k = 0) then (1 : A) else 0
+  support_finite := fun bound => by
+    apply ((Finset.Icc (bound i) (-bound j - 1)).finite_toSet.image
+      (fun k => fun l : Fin n => if l = i then k else if l = j then -k - 1 else 0)).subset
+    intro idx ⟨hall, hne⟩
+    split_ifs at hne with hidx
+    · obtain ⟨hsum, hzero⟩ := hidx
+      have hj := hall j
+      refine ⟨idx i, Finset.mem_coe.mpr (Finset.mem_Icc.mpr ⟨hall i, by omega⟩), ?_⟩
+      ext l
+      by_cases hli : l = i
+      · subst hli; simp
+      · by_cases hlj : l = j
+        · simp [hlj]; omega
+        · simp [hli, hlj, hzero l hli hlj]
+    · simp at hne
+
+/-- The formal delta distribution `δ(z,w) = ∑_{n ∈ ℤ} z^n w^{-n-1}` (alias).
 
 ## References
 * [Nozaradan, *Introduction to Vertex Algebras*], Definition 1.3.1
-* [Kac, *Vertex Algebras for Beginners*], §1.3
 -/
-noncomputable def formalDelta : GenFormalDist2 A where
-  coeff := fun idx => if idx 0 + idx 1 + 1 = 0 then (1 : A) else 0
-  support_finite := fun bound => by
-    by_cases h : bound 0 ≤ -bound 1 - 1
-    · let k_finset : Finset ℤ := Finset.Icc (bound 0) (-bound 1 - 1)
-      have h_subset : {idx : Fin 2 → ℤ | (∀ i, idx i ≥ bound i) ∧
-                                         (if idx 0 + idx 1 + 1 = 0 then (1 : A) else 0) ≠ 0} ⊆
-                      (fun k => fun i : Fin 2 => if i = 0 then k else -k - 1) '' (k_finset : Set ℤ) := by
-        intro idx ⟨hall, hne⟩
-        split_ifs at hne with hidx
-        · use idx 0
-          constructor
-          · rw [Finset.mem_coe, Finset.mem_Icc]
-            have eq_idx1 : idx 1 = -idx 0 - 1 := by omega
-            have ge_bound0 : idx 0 ≥ bound 0 := hall 0
-            have ge_bound1 : idx 1 ≥ bound 1 := hall 1
-            omega
-          · ext i
-            fin_cases i
-            · simp
-            · have : idx 1 = -idx 0 - 1 := by omega
-              simp [this]
-        · simp at hne
-      apply Set.Finite.subset _ h_subset
-      apply Set.Finite.image
-      exact Finset.finite_toSet k_finset
-    · convert Set.finite_empty
-      ext idx
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_and]
-      intro hall
-      split_ifs with hidx
-      · have : idx 0 ≥ bound 0 := hall 0
-        have : idx 1 ≥ bound 1 := hall 1
-        have : idx 1 = -idx 0 - 1 := by omega
-        omega
-      · simp
+noncomputable abbrev formalDelta : GenFormalDist2 A :=
+  formalDeltaPair 0 1 (by decide)
 
 /-- The coefficients of `formalDelta` match the expected pattern. -/
 @[simp]
 theorem formalDelta_coeff (idx : Fin 2 → ℤ) :
-    formalDelta.coeff idx = if idx 0 + idx 1 + 1 = 0 then (1 : A) else 0 := rfl
+    formalDelta.coeff idx = if idx 0 + idx 1 + 1 = 0 then (1 : A) else 0 := by
+  show (formalDeltaPair 0 1 (by decide)).coeff idx = _
+  simp only [formalDeltaPair]
+  congr 1; ext
+  constructor
+  · rintro ⟨h, -⟩; exact h
+  · intro h; exact ⟨h, fun k hk0 hk1 => by fin_cases k <;> simp_all⟩
 
 /-- `δ(z,w) = i_{z,w}(z-w)^{-1} - i_{w,z}(z-w)^{-1}`.
 
@@ -125,45 +176,13 @@ theorem formalDelta_eq_expansion_izw_sub_iwz :
 
 namespace FormalDelta
 
-/-- Multiplication by `(z - w)` on generalized 2-variable distributions.
+/-- Multiplication by `(z - w)` on generalized 2-variable distributions (alias). -/
+abbrev mul_z_sub_w (a : GenFormalDist2 A) : GenFormalDist2 A :=
+  mul_var_sub 0 1 (by decide) a
 
-`((z-w) · a)(n,m) = a(n-1,m) - a(n,m-1)` -/
-def mul_z_sub_w (a : GenFormalDist2 A) : GenFormalDist2 A where
-  coeff := fun idx =>
-    a.coeff (Function.update idx 0 (idx 0 - 1)) -
-    a.coeff (Function.update idx 1 (idx 1 - 1))
-  support_finite := fun bound => by
-    have ha0 := a.support_finite (Function.update bound 0 (bound 0 - 1))
-    have ha1 := a.support_finite (Function.update bound 1 (bound 1 - 1))
-    let shift0 : (Fin 2 → ℤ) → (Fin 2 → ℤ) := fun idx' => Function.update idx' 0 (idx' 0 + 1)
-    let shift1 : (Fin 2 → ℤ) → (Fin 2 → ℤ) := fun idx' => Function.update idx' 1 (idx' 1 + 1)
-    apply Set.Finite.subset (Set.Finite.union (ha0.image shift0) (ha1.image shift1))
-    intro idx ⟨hge, hne⟩
-    by_cases h0 : a.coeff (Function.update idx 0 (idx 0 - 1)) ≠ 0
-    · left; simp only [Set.mem_image, shift0]
-      refine ⟨Function.update idx 0 (idx 0 - 1), ⟨?_, h0⟩, ?_⟩
-      · intro i; by_cases hi : i = 0
-        · subst hi; simp [Function.update]; linarith [hge 0]
-        · rw [Function.update_of_ne hi, Function.update_of_ne hi]; exact hge i
-      · ext i; by_cases hi : i = 0
-        · simp [hi, Function.update]
-        · simp [hi, Function.update]
-    · push_neg at h0
-      have h1 : a.coeff (Function.update idx 1 (idx 1 - 1)) ≠ 0 := by
-        intro h1; apply hne; simp [h0, h1]
-      right; simp only [Set.mem_image, shift1]
-      refine ⟨Function.update idx 1 (idx 1 - 1), ⟨?_, h1⟩, ?_⟩
-      · intro i; by_cases hi : i = 1
-        · subst hi; simp [Function.update]; linarith [hge 1]
-        · rw [Function.update_of_ne hi, Function.update_of_ne hi]; exact hge i
-      · ext i; by_cases hi : i = 1
-        · simp [hi, Function.update]
-        · simp [hi, Function.update]
-
-/-- Iterated multiplication by `(z - w)`. -/
-def mul_z_sub_w_pow (a : GenFormalDist2 A) : ℕ → GenFormalDist2 A
-  | 0 => a
-  | n + 1 => mul_z_sub_w (mul_z_sub_w_pow a n)
+/-- Iterated multiplication by `(z - w)` (alias). -/
+abbrev mul_z_sub_w_pow (a : GenFormalDist2 A) (n : ℕ) : GenFormalDist2 A :=
+  mul_var_sub_pow 0 1 (by decide) a n
 
 /-- `(z-w) · δ = 0`. -/
 theorem mul_z_sub_w_formalDelta : mul_z_sub_w (formalDelta : GenFormalDist2 A) = 0 := by
@@ -229,12 +248,8 @@ theorem iteratedDeriv_snd_formalDelta_coeff (n : ℕ) (idx : Fin 2 → ℤ) :
     show (idx 1 + 1 : ℤ) •
       (GeneralizedFormalDistribution.iteratedDeriv formalDelta 1 n).coeff
         (Function.update idx 1 (idx 1 + 1)) = _
-    have h_update_0 : (Function.update idx (1 : Fin 2) (idx 1 + 1)) 0 = idx 0 := by
-      rw [Function.update_of_ne (by decide)]
-    have h_update_1 : (Function.update idx (1 : Fin 2) (idx 1 + 1)) 1 = idx 1 + 1 := by
-      simp [Function.update]
-    rw [ih (Function.update idx 1 (idx 1 + 1))]
-    rw [h_update_0, h_update_1]
+    rw [ih (Function.update idx 1 (idx 1 + 1)),
+        Function.update_self, Function.update_of_ne (by decide : (0 : Fin 2) ≠ 1)]
     by_cases h : idx 0 + idx 1 + (↑n + 1) + 1 = 0
     · rw [if_pos (by omega : idx 0 + (idx 1 + 1) + (↑n : ℤ) + 1 = 0)]
       rw [if_pos (by omega : idx 0 + idx 1 + (↑(n + 1) : ℤ) + 1 = 0)]
@@ -248,17 +263,8 @@ theorem iteratedDeriv_snd_formalDelta_coeff (n : ℕ) (idx : Fin 2 → ℤ) :
 
 /-- `mul_z_sub_w` commutes with scalar multiplication. -/
 theorem mul_z_sub_w_smul (c : A) (a : GenFormalDist2 A) :
-    mul_z_sub_w (c • a) = c • mul_z_sub_w a := by
-  ext idx
-  show (c • a).coeff (Function.update idx 0 (idx 0 - 1)) -
-       (c • a).coeff (Function.update idx 1 (idx 1 - 1)) =
-       c • (a.coeff (Function.update idx 0 (idx 0 - 1)) -
-            a.coeff (Function.update idx 1 (idx 1 - 1)))
-  show c • a.coeff (Function.update idx 0 (idx 0 - 1)) -
-       c • a.coeff (Function.update idx 1 (idx 1 - 1)) =
-       c • (a.coeff (Function.update idx 0 (idx 0 - 1)) -
-            a.coeff (Function.update idx 1 (idx 1 - 1)))
-  rw [smul_sub]
+    mul_z_sub_w (c • a) = c • mul_z_sub_w a :=
+  mul_var_sub_smul 0 1 (by decide) c a
 
 /-- Property 2: `(z-w) · ∂_w^n δ = n · ∂_w^{n-1} δ` for `n ≥ 1`.
 
@@ -276,18 +282,11 @@ theorem mul_z_sub_w_iteratedDeriv_formalDelta (n : ℕ) (hn : n ≥ 1) :
        (GeneralizedFormalDistribution.iteratedDeriv formalDelta 1 n).coeff
         (Function.update idx 1 (idx 1 - 1)) =
        (n : A) • (GeneralizedFormalDistribution.iteratedDeriv formalDelta 1 (n - 1)).coeff idx
-  have h_update_00 : (Function.update idx (0 : Fin 2) (idx 0 - 1)) 0 = idx 0 - 1 := by
-    simp [Function.update]
-  have h_update_01 : (Function.update idx (0 : Fin 2) (idx 0 - 1)) 1 = idx 1 := by
-    rw [Function.update_of_ne (by decide)]
-  have h_update_10 : (Function.update idx (1 : Fin 2) (idx 1 - 1)) 0 = idx 0 := by
-    rw [Function.update_of_ne (by decide)]
-  have h_update_11 : (Function.update idx (1 : Fin 2) (idx 1 - 1)) 1 = idx 1 - 1 := by
-    simp [Function.update]
   rw [iteratedDeriv_snd_formalDelta_coeff n (Function.update idx 0 (idx 0 - 1)),
       iteratedDeriv_snd_formalDelta_coeff n (Function.update idx 1 (idx 1 - 1)),
       iteratedDeriv_snd_formalDelta_coeff (n - 1) idx]
-  rw [h_update_00, h_update_01, h_update_10, h_update_11]
+  simp only [Function.update_self, Function.update_of_ne (by decide : (0 : Fin 2) ≠ 1),
+    Function.update_of_ne (by decide : (1 : Fin 2) ≠ 0)]
   by_cases h : idx 0 + idx 1 + ↑n = 0
   · rw [if_pos (by omega : (idx 0 - 1 : ℤ) + idx 1 + ↑n + 1 = 0),
         if_pos (by omega : idx 0 + (idx 1 - 1 : ℤ) + ↑n + 1 = 0),
@@ -304,23 +303,13 @@ theorem mul_z_sub_w_iteratedDeriv_formalDelta (n : ℕ) (hn : n ≥ 1) :
 
 /-- Iteration commutes: `f^{n+1}(a) = f^n(f(a))`. -/
 theorem mul_z_sub_w_pow_succ (a : GenFormalDist2 A) (n : ℕ) :
-    mul_z_sub_w_pow a (n + 1) = mul_z_sub_w_pow (mul_z_sub_w a) n := by
-  induction n with
-  | zero => rfl
-  | succ n ih =>
-    show mul_z_sub_w (mul_z_sub_w_pow a (n + 1)) =
-         mul_z_sub_w (mul_z_sub_w_pow (mul_z_sub_w a) n)
-    rw [ih]
+    mul_z_sub_w_pow a (n + 1) = mul_z_sub_w_pow (mul_z_sub_w a) n :=
+  mul_var_sub_pow_succ 0 1 (by decide) a n
 
 /-- Iteration distributes over scalar multiplication. -/
 theorem smul_mul_z_sub_w_pow (m : ℕ) (c : A) (a : GenFormalDist2 A) :
-    mul_z_sub_w_pow (c • a) m = c • mul_z_sub_w_pow a m := by
-  induction m with
-  | zero => rfl
-  | succ m ihm =>
-    show mul_z_sub_w (mul_z_sub_w_pow (c • a) m) =
-         c • mul_z_sub_w (mul_z_sub_w_pow a m)
-    rw [ihm, mul_z_sub_w_smul]
+    mul_z_sub_w_pow (c • a) m = c • mul_z_sub_w_pow a m :=
+  smul_mul_var_sub_pow 0 1 (by decide) m c a
 
 /-- Swap the two variables of a 2-variable generalized distribution: `a(z,w) ↦ a(w,z)`. -/
 noncomputable def swap2 (a : GenFormalDist2 A) : GenFormalDist2 A where
@@ -343,10 +332,11 @@ because the support condition `n + m + 1 = 0` is symmetric.
 -/
 theorem formalDelta_swap : swap2 (formalDelta : GenFormalDist2 A) = formalDelta := by
   ext idx
-  change (if idx 1 + idx 0 + 1 = 0 then (1 : A) else 0) =
-         if idx 0 + idx 1 + 1 = 0 then 1 else 0
-  have h : idx 1 + idx 0 + 1 = idx 0 + idx 1 + 1 := by omega
-  rw [h]
+  show (formalDelta : GenFormalDist2 A).coeff
+    (fun i : Fin 2 => if i = 0 then idx 1 else idx 0) = formalDelta.coeff idx
+  rw [formalDelta_coeff, formalDelta_coeff]
+  simp only [show (1 : Fin 2) = 0 ↔ False from by decide, ite_true, ite_false]
+  exact if_congr ⟨by omega, by omega⟩ rfl rfl
 
 /-- Property 4: `∂_z δ(z,w) + ∂_w δ(z,w) = 0`.
 
@@ -359,26 +349,17 @@ theorem deriv_fst_formalDelta_add_deriv_snd_formalDelta :
   ext idx
   show (idx 0 + 1 : ℤ) • formalDelta.coeff (Function.update idx 0 (idx 0 + 1)) +
        (idx 1 + 1 : ℤ) • formalDelta.coeff (Function.update idx 1 (idx 1 + 1)) = 0
-  rw [formalDelta_coeff, formalDelta_coeff]
-  have h1 : Function.update idx 0 (idx 0 + 1) 0 = idx 0 + 1 := update_eval_same idx 0 (idx 0 + 1)
-  have h2 : Function.update idx 0 (idx 0 + 1) 1 = idx 1 := update_eval_diff idx 0 1 (idx 0 + 1) (by decide)
-  have h3 : Function.update idx 1 (idx 1 + 1) 0 = idx 0 := update_eval_diff idx 1 0 (idx 1 + 1) (by decide)
-  have h4 : Function.update idx 1 (idx 1 + 1) 1 = idx 1 + 1 := update_eval_same idx 1 (idx 1 + 1)
-  simp only [h1, h2, h3, h4]
+  simp only [formalDelta_coeff, Function.update_self,
+    Function.update_of_ne (by decide : (0 : Fin 2) ≠ 1),
+    Function.update_of_ne (by decide : (1 : Fin 2) ≠ 0)]
   by_cases h : idx 0 + idx 1 + 2 = 0
-  · have cond1 : (idx 0 + 1 : ℤ) + idx 1 + 1 = 0 := by omega
-    have cond2 : idx 0 + (idx 1 + 1 : ℤ) + 1 = 0 := by omega
-    simp only [cond1, cond2, ↓reduceIte, zsmul_eq_mul, mul_one]
-    have key : ((idx 0 + 1 : ℤ) : A) + ((idx 1 + 1 : ℤ) : A) = ((idx 0 + 1 + (idx 1 + 1) : ℤ) : A) := by
-      rw [← Int.cast_add]
-    rw [key]
-    have : idx 0 + 1 + (idx 1 + 1) = idx 0 + idx 1 + 2 := by omega
-    rw [this, h]
-    simp
-  · have cond1 : ¬((idx 0 + 1 : ℤ) + idx 1 + 1 = 0) := by omega
-    have cond2 : ¬(idx 0 + (idx 1 + 1 : ℤ) + 1 = 0) := by omega
-    simp only [cond1, cond2, ↓reduceIte]
-    rw [smul_zero, smul_zero, zero_add]
+  · simp only [show (idx 0 + 1 : ℤ) + idx 1 + 1 = 0 from by omega,
+               show idx 0 + (idx 1 + 1 : ℤ) + 1 = 0 from by omega, ↓reduceIte, zsmul_eq_mul, mul_one,
+               ← Int.cast_add, show idx 0 + 1 + (idx 1 + 1) = idx 0 + idx 1 + 2 from by omega, h,
+               Int.cast_zero]
+  · simp only [show ¬((idx 0 + 1 : ℤ) + idx 1 + 1 = 0) from by omega,
+               show ¬(idx 0 + (idx 1 + 1 : ℤ) + 1 = 0) from by omega, ↓reduceIte,
+               smul_zero, zero_add]
 
 /-- Property 1: `(z-w)^{n+1} · ∂_w^n δ = 0` for all `n`.
 
@@ -458,7 +439,7 @@ lemma embedFst_mulGen_formalDelta_coeff (a : FormalDist1 A) (idx : Fin 2 → ℤ
   change GeneralizedFormalDistribution.mulFormalGen _ _ _ _ = _
   unfold GeneralizedFormalDistribution.mulFormalGen
   rw [Finset.sum_eq_single (fun i : Fin 2 => if i = 0 then idx 0 + idx 1 + 1 else 0)]
-  · simp only [FormalDistribution.embedFst, formalDelta_coeff]
+  · simp only [FormalDistribution.embedFst_coeff', formalDelta_coeff]
     simp only [show (1 : Fin 2) = (0 : Fin 2) ↔ False from by decide,
                ite_true, ite_false, sub_zero]
     rw [if_pos (by omega : idx 0 - (idx 0 + idx 1 + 1) + idx 1 + 1 = 0), mul_one]
@@ -468,12 +449,12 @@ lemma embedFst_mulGen_formalDelta_coeff (a : FormalDist1 A) (idx : Fin 2 → ℤ
     by_cases h1 : c 1 = 0
     · have hc0 : c 0 ≠ idx 0 + idx 1 + 1 := by
         intro heq; apply hne; ext i; fin_cases i <;> simp [heq, h1]
-      simp only [FormalDistribution.embedFst, formalDelta_coeff] at hsupp ⊢
+      simp only [FormalDistribution.embedFst_coeff', formalDelta_coeff] at hsupp ⊢
       simp only [h1, show (1 : Fin 2) = (0 : Fin 2) ↔ False from by decide,
                  ite_true, ite_false, sub_zero] at hsupp ⊢
       rw [if_neg (by omega : ¬(idx 0 - c 0 + idx 1 + 1 = 0)), mul_zero]
     · exfalso; apply hsupp
-      simp [FormalDistribution.embedFst, h1]
+      simp [h1]
   · intro hb
     have : (FormalDistribution.embedFst a).coeff
         (fun i : Fin 2 => if i = 0 then idx 0 + idx 1 + 1 else 0) = 0 := by
@@ -487,7 +468,7 @@ lemma embedSnd_mulGen_formalDelta_coeff (a : FormalDist1 A) (idx : Fin 2 → ℤ
   change GeneralizedFormalDistribution.mulFormalGen _ _ _ _ = _
   unfold GeneralizedFormalDistribution.mulFormalGen
   rw [Finset.sum_eq_single (fun i : Fin 2 => if i = 0 then 0 else idx 0 + idx 1 + 1)]
-  · simp only [FormalDistribution.embedSnd, formalDelta_coeff]
+  · simp only [FormalDistribution.embedSnd_coeff', formalDelta_coeff]
     simp only [show (1 : Fin 2) = (0 : Fin 2) ↔ False from by decide,
                ite_true, ite_false, sub_zero]
     rw [if_pos (by omega : idx 0 + (idx 1 - (idx 0 + idx 1 + 1)) + 1 = 0), mul_one]
@@ -497,12 +478,12 @@ lemma embedSnd_mulGen_formalDelta_coeff (a : FormalDist1 A) (idx : Fin 2 → ℤ
     by_cases h0 : c 0 = 0
     · have hc1 : c 1 ≠ idx 0 + idx 1 + 1 := by
         intro heq; apply hne; ext i; fin_cases i <;> simp [heq, h0]
-      simp only [FormalDistribution.embedSnd, formalDelta_coeff] at hsupp ⊢
+      simp only [FormalDistribution.embedSnd_coeff', formalDelta_coeff] at hsupp ⊢
       simp only [h0, show (1 : Fin 2) = (0 : Fin 2) ↔ False from by decide,
                  ite_true, ite_false, sub_zero] at hsupp ⊢
       rw [if_neg (by omega : ¬(idx 0 + (idx 1 - c 1) + 1 = 0)), mul_zero]
     · exfalso; apply hsupp
-      simp [FormalDistribution.embedSnd, h0]
+      simp [h0]
   · intro hb
     have : (FormalDistribution.embedSnd a).coeff
         (fun i : Fin 2 => if i = 0 then 0 else idx 0 + idx 1 + 1) = 0 := by
@@ -530,7 +511,7 @@ theorem residueAt_embedFst_mulGen_formalDelta (a : FormalDist1 A) :
       ((FormalDistribution.embedFst a).mulGen formalDelta) =
     a.toGeneralized := by
   ext idx
-  simp only [GeneralizedFormalDistribution.residueAt]
+  rw [GeneralizedFormalDistribution.residueAt_coeff]
   rw [embedFst_mulGen_formalDelta_coeff]
   simp only [FormalDistribution.toGeneralized]
   congr 1; ext i; fin_cases i; simp
@@ -545,7 +526,7 @@ All main results from Section 1 are formalized:
   - Definition 1.1.1: FormalDistribution, FormalPolynomial, FormalTaylorSeries
   - Definition 1.1.3: fourierExpansion, fourierMode, residue
   - Definition 1.2.1: expansion_izw, expansion_iwz
-  - Definition 1.2.2: Int.extChoose, intBinomial
+  - Definition 1.2.2: intBinomial (via Ring.choose)
   - Proposition 1.3.4: formalDelta_eq_expansion_izw_sub_iwz
   - Definition 1.3.1: formalDelta
   - Proposition 1.3.5: Properties 1-7 of δ (all complete)
@@ -555,5 +536,5 @@ All main results from Section 1 are formalized:
 example : Type _ := FormalDistribution ℂ 1
 example : Type _ := GeneralizedFormalDistribution ℂ 2
 example : FormalDist1 ℂ → (ℤ → ℂ) := fourierExpansion
-example : ℤ → ℕ → ℚ := Int.extChoose
+example : ℤ → ℕ → ℤ := intBinomial
 noncomputable example : GenFormalDist2 ℂ := formalDelta

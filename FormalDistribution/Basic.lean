@@ -259,88 +259,82 @@ noncomputable def FormalDistribution.mulGen
     · ext i; fin_cases i <;> simp
 ⟩
 
-/-! ### Embedding 1D generalized distributions into 2D -/
+/-! ### Embedding 1D generalized distributions into n-variable -/
 
-/-- Embed a 1D generalized distribution into 2D in the first variable (concentrated at second = 0). -/
-noncomputable def embedFst (a : GeneralizedFormalDistribution A 1) : GeneralizedFormalDistribution A 2 where
-  coeff := fun idx => if idx 1 = 0 then a.coeff (fun _ => idx 0) else 0
+/-- Embed a 1D generalized distribution into an n-variable distribution at position `i`,
+setting all other variables to 0. -/
+noncomputable def embedAt {n : ℕ} (i : Fin n) (a : GeneralizedFormalDistribution A 1) :
+    GeneralizedFormalDistribution A n where
+  coeff := fun idx => if ∀ j, j ≠ i → idx j = 0 then a.coeff (fun _ => idx i) else 0
   support_finite := fun bound => by
-    let bound_a : Fin 1 → ℤ := fun _ => bound 0
-    have ha := a.support_finite bound_a
-    have : {idx : Fin 2 → ℤ | (∀ i, idx i ≥ bound i) ∧
-                               (if idx 1 = 0 then a.coeff (fun _ => idx 0) else 0) ≠ 0} ⊆
-           (fun k => fun i : Fin 2 => if i = 0 then k else 0) ''
-           {k : ℤ | k ≥ bound_a 0 ∧ a.coeff (fun _ => k) ≠ 0} := by
-      intro idx ⟨hall, hne⟩
-      split_ifs at hne with h1
-      · use idx 0
-        constructor
-        · constructor
-          · simp [bound_a]; exact hall 0
-          · exact hne
-        · ext i; fin_cases i <;> simp [*]
-      · simp at hne
-    apply Set.Finite.subset _ this
-    have ha' : {k : ℤ | k ≥ bound_a 0 ∧ a.coeff (fun _ => k) ≠ 0} ⊆
-               (fun idx1 : Fin 1 → ℤ => idx1 0) ''
-               {idx1 : Fin 1 → ℤ | (∀ i, idx1 i ≥ bound_a i) ∧ a.coeff idx1 ≠ 0} := by
-      intro k ⟨hk, ha_ne⟩
-      use (fun _ => k)
-      exact ⟨⟨fun i => by simp [bound_a]; exact hk, ha_ne⟩, rfl⟩
-    apply Set.Finite.image
-    exact Set.Finite.subset (Set.Finite.image _ ha) ha'
+    have ha := a.support_finite (fun _ => bound i)
+    apply (ha.image (fun k : Fin 1 → ℤ => fun j : Fin n => if j = i then k 0 else 0)).subset
+    intro idx ⟨hall, hne⟩
+    split_ifs at hne with hzero
+    · refine ⟨fun _ => idx i, ⟨fun _ => hall i, hne⟩, ?_⟩
+      ext j; simp only; split_ifs with hj
+      · rw [hj]
+      · exact (hzero j hj).symm
+    · simp at hne
 
-/-- Embed a 1D generalized distribution into 2D in the second variable (concentrated at first = 0). -/
-noncomputable def embedSnd (a : GeneralizedFormalDistribution A 1) : GeneralizedFormalDistribution A 2 where
-  coeff := fun idx => if idx 0 = 0 then a.coeff (fun _ => idx 1) else 0
-  support_finite := fun bound => by
-    let bound_a : Fin 1 → ℤ := fun _ => bound 1
-    have ha := a.support_finite bound_a
-    have : {idx : Fin 2 → ℤ | (∀ i, idx i ≥ bound i) ∧
-                               (if idx 0 = 0 then a.coeff (fun _ => idx 1) else 0) ≠ 0} ⊆
-           (fun l => fun i : Fin 2 => if i = 0 then 0 else l) ''
-           {l : ℤ | l ≥ bound_a 0 ∧ a.coeff (fun _ => l) ≠ 0} := by
-      intro idx ⟨hall, hne⟩
-      split_ifs at hne with h0
-      · use idx 1
-        constructor
-        · constructor
-          · simp [bound_a]; exact hall 1
-          · exact hne
-        · ext i; fin_cases i <;> simp [*]
-      · simp at hne
-    apply Set.Finite.subset _ this
-    have ha' : {l : ℤ | l ≥ bound_a 0 ∧ a.coeff (fun _ => l) ≠ 0} ⊆
-               (fun idx1 : Fin 1 → ℤ => idx1 0) ''
-               {idx1 : Fin 1 → ℤ | (∀ i, idx1 i ≥ bound_a i) ∧ a.coeff idx1 ≠ 0} := by
-      intro l ⟨hl, ha_ne⟩
-      use (fun _ => l)
-      exact ⟨⟨fun i => by simp [bound_a]; exact hl, ha_ne⟩, rfl⟩
-    apply Set.Finite.image
-    exact Set.Finite.subset (Set.Finite.image _ ha) ha'
+/-- Embed in the first variable (alias for `embedAt 0`). -/
+noncomputable abbrev embedFst : GeneralizedFormalDistribution A 1 → GeneralizedFormalDistribution A 2 :=
+  embedAt 0
 
-/-- Extract the residue in a specific variable from a 2D generalized distribution. -/
-noncomputable def residueAt (i : Fin 2) (a : GeneralizedFormalDistribution A 2) : GeneralizedFormalDistribution A 1 where
-  coeff := fun idx => a.coeff (fun j => if j = i then -1 else idx 0)
+/-- Embed in the second variable (alias for `embedAt 1`). -/
+noncomputable abbrev embedSnd : GeneralizedFormalDistribution A 1 → GeneralizedFormalDistribution A 2 :=
+  embedAt 1
+
+/-- Coefficient of `embedAt i a` at index `idx`: nonzero only when all other variables are 0. -/
+@[simp] lemma embedAt_coeff {n : ℕ} (i : Fin n) (a : GeneralizedFormalDistribution A 1) (idx : Fin n → ℤ) :
+    (embedAt i a).coeff idx = if ∀ j, j ≠ i → idx j = 0 then a.coeff (fun _ => idx i) else 0 := rfl
+
+/-- For 2-variable embeddings, the condition simplifies to checking a single variable. -/
+lemma embedFst_coeff' (a : GeneralizedFormalDistribution A 1) (idx : Fin 2 → ℤ) :
+    (embedFst a).coeff idx = if idx 1 = 0 then a.coeff (fun _ => idx 0) else 0 := by
+  simp only [embedFst, embedAt_coeff]
+  congr 1; ext
+  constructor
+  · intro h; exact h 1 (by decide)
+  · intro h j hj; exact (by fin_cases j <;> [exact absurd rfl hj; exact h])
+
+lemma embedSnd_coeff' (a : GeneralizedFormalDistribution A 1) (idx : Fin 2 → ℤ) :
+    (embedSnd a).coeff idx = if idx 0 = 0 then a.coeff (fun _ => idx 1) else 0 := by
+  simp only [embedSnd, embedAt_coeff]
+  congr 1; ext
+  constructor
+  · intro h; exact h 0 (by decide)
+  · intro h j hj; exact (by fin_cases j <;> [exact h; exact absurd rfl hj])
+
+/-- Extract the residue at variable `i` from an n-variable generalized distribution,
+projecting remaining variables onto a 1D distribution via a chosen variable `j`. -/
+noncomputable def residueAtPair {n : ℕ} (i j : Fin n) (hij : i ≠ j)
+    (a : GeneralizedFormalDistribution A n) : GeneralizedFormalDistribution A 1 where
+  coeff := fun idx => a.coeff (fun k => if k = i then -1 else if k = j then idx 0 else 0)
   support_finite := fun bound => by
-    let bound_a : Fin 2 → ℤ := fun j => if j = i then -1 else bound 0
+    let bound_a : Fin n → ℤ := fun k => if k = i then -1 else if k = j then bound 0 else 0
     have ha := a.support_finite bound_a
-    have : {idx : Fin 1 → ℤ | (∀ j, idx j ≥ bound j) ∧
-                               a.coeff (fun j => if j = i then -1 else idx 0) ≠ 0} ⊆
-           (fun idx2 : Fin 2 → ℤ => fun _ : Fin 1 => idx2 (if i = 0 then 1 else 0)) ''
-           {idx2 : Fin 2 → ℤ | (∀ j, idx2 j ≥ bound_a j) ∧ a.coeff idx2 ≠ 0} := by
-      intro idx ⟨_, hne⟩
-      use (fun j => if j = i then -1 else idx 0)
-      constructor
-      · constructor
-        · intro j
-          by_cases hj : j = i
-          · simp [hj, bound_a]
-          · fin_cases i <;> fin_cases j <;> (try simp [*]) <;> (try contradiction)
-            all_goals simp [bound_a, *]
-        · exact hne
-      · funext j; fin_cases j; fin_cases i <;> rfl
-    exact Set.Finite.subset (Set.Finite.image _ ha) this
+    apply (ha.image (fun f : Fin n → ℤ => fun _ : Fin 1 => f j)).subset
+    intro idx ⟨_, hne⟩
+    refine ⟨fun k => if k = i then -1 else if k = j then idx 0 else 0,
+      ⟨fun k => by simp only [bound_a]; split_ifs with h1 h2 <;> simp_all, hne⟩, ?_⟩
+    funext k; fin_cases k; simp [hij.symm]
+
+/-- Residue at variable 0 projected onto variable 1 (alias for `residueAtPair 0 1`). -/
+noncomputable abbrev residueAt (i : Fin 2) (a : GeneralizedFormalDistribution A 2) :
+    GeneralizedFormalDistribution A 1 :=
+  residueAtPair i (if i = 0 then 1 else 0) (by fin_cases i <;> decide) a
+
+/-- Coefficient of `residueAt i` for 2-variable distributions:
+sets variable `i` to `-1` and the other to `idx 0`. -/
+lemma residueAt_coeff (i : Fin 2) (a : GeneralizedFormalDistribution A 2) (idx : Fin 1 → ℤ) :
+    (residueAt i a).coeff idx = a.coeff (fun j => if j = i then -1 else idx 0) := by
+  show (residueAtPair i _ _ a).coeff idx = _
+  simp only [residueAtPair]
+  congr 1; funext k
+  by_cases hk : k = i
+  · simp [hk]
+  · simp [hk]; fin_cases i <;> fin_cases k <;> simp_all
 
 /-- Iterated formal derivative for generalized distributions. -/
 def iteratedDeriv (a : GeneralizedFormalDistribution A n) (i : Fin n) : ℕ → GeneralizedFormalDistribution A n

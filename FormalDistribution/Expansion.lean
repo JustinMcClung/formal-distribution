@@ -136,14 +136,13 @@ theorem deriv_fst_expansion_izw (k : ℤ) :
   · rw [if_pos ⟨by omega, hcond.2⟩, if_pos hcond]
     simp only [zsmul_eq_mul, smul_eq_mul, ← Int.cast_mul]
     congr 1
-    have h_key := intBinomial_mul_sub k (idx 1).toNat
     have hm : (↑((idx 1).toNat) : ℤ) = idx 1 := Int.toNat_of_nonneg hcond.2
+    have h_eq : idx 0 + 1 = k - ↑((idx 1).toNat) := by omega
     calc (idx 0 + 1) * (intBinomial k (idx 1).toNat * (-1) ^ (idx 1).toNat)
-        = (k - ↑((idx 1).toNat)) * (intBinomial k (idx 1).toNat * (-1) ^ (idx 1).toNat) := by
-          congr 1; omega
-      _ = ((k - ↑((idx 1).toNat)) * intBinomial k (idx 1).toNat) * (-1) ^ (idx 1).toNat := by ring
-      _ = (k * intBinomial (k - 1) (idx 1).toNat) * (-1) ^ (idx 1).toNat := by rw [h_key]
-      _ = k * (intBinomial (k - 1) (idx 1).toNat * (-1) ^ (idx 1).toNat) := by ring
+        = ((k - ↑((idx 1).toNat)) * intBinomial k (idx 1).toNat) *
+          (-1) ^ (idx 1).toNat := by rw [h_eq]; ring
+      _ = k * (intBinomial (k - 1) (idx 1).toNat * (-1) ^ (idx 1).toNat) := by
+          rw [intBinomial_mul_sub k]; ring
   · rw [if_neg (by intro ⟨h1, h2⟩; exact hcond ⟨by omega, h2⟩), if_neg hcond]
     simp [smul_zero]
 
@@ -161,16 +160,13 @@ theorem deriv_snd_expansion_izw (k : ℤ) :
     simp only [zsmul_eq_mul, smul_eq_mul, ← Int.cast_neg, ← Int.cast_mul]
     congr 1
     have hm1_eq : (idx 1 + 1).toNat = (idx 1).toNat + 1 := by omega
+    have h_eq : idx 1 + 1 = ↑((idx 1).toNat + 1) := by omega
     rw [hm1_eq]
-    have h_succ := intBinomial_succ_mul_eq k (idx 1).toNat
     calc (idx 1 + 1) * (intBinomial k ((idx 1).toNat + 1) * (-1) ^ ((idx 1).toNat + 1))
-        = ↑((idx 1).toNat + 1) * (intBinomial k ((idx 1).toNat + 1) * (-1) ^ ((idx 1).toNat + 1)) := by
-          congr 1; omega
-      _ = (↑((idx 1).toNat + 1) * intBinomial k ((idx 1).toNat + 1)) *
-          (-1) ^ ((idx 1).toNat + 1) := by ring
-      _ = (k * intBinomial (k - 1) (idx 1).toNat) * (-1) ^ ((idx 1).toNat + 1) := by rw [h_succ]
+        = (↑((idx 1).toNat + 1) * intBinomial k ((idx 1).toNat + 1)) *
+          (-1) ^ ((idx 1).toNat + 1) := by rw [h_eq]; ring
       _ = -k * (intBinomial (k - 1) (idx 1).toNat * (-1) ^ (idx 1).toNat) := by
-          rw [pow_succ]; ring
+          rw [intBinomial_succ_mul_eq k, pow_succ]; ring
   · rw [if_neg hcond, smul_zero]
     by_cases hlhs : idx 0 + (idx 1 + 1) = k ∧ idx 1 + 1 ≥ 0
     · rw [if_pos hlhs]
@@ -206,15 +202,13 @@ theorem deriv_fst_expansion_iwz (k : ℤ) :
     congr 1
     have hm0_eq : (idx 0 + 1).toNat = (idx 0).toNat + 1 := by omega
     have h_sign : (k - (idx 0 + 1)).natAbs = ((k - 1) - idx 0).natAbs := by omega
+    have h_eq : idx 0 + 1 = ↑((idx 0).toNat + 1) := by omega
     rw [hm0_eq, h_sign]
-    have h_succ := intBinomial_succ_mul_eq k (idx 0).toNat
     calc (idx 0 + 1) * (intBinomial k ((idx 0).toNat + 1) * (-1) ^ ((k - 1) - idx 0).natAbs)
-        = ↑((idx 0).toNat + 1) * (intBinomial k ((idx 0).toNat + 1) * (-1) ^ ((k - 1) - idx 0).natAbs) := by
-          congr 1; omega
-      _ = (↑((idx 0).toNat + 1) * intBinomial k ((idx 0).toNat + 1)) *
-          (-1) ^ ((k - 1) - idx 0).natAbs := by ring
-      _ = (k * intBinomial (k - 1) (idx 0).toNat) * (-1) ^ ((k - 1) - idx 0).natAbs := by rw [h_succ]
-      _ = k * (intBinomial (k - 1) (idx 0).toNat * (-1) ^ ((k - 1) - idx 0).natAbs) := by ring
+        = (↑((idx 0).toNat + 1) * intBinomial k ((idx 0).toNat + 1)) *
+          (-1) ^ ((k - 1) - idx 0).natAbs := by rw [h_eq]; ring
+      _ = k * (intBinomial (k - 1) (idx 0).toNat * (-1) ^ ((k - 1) - idx 0).natAbs) := by
+          rw [intBinomial_succ_mul_eq k]; ring
   · rw [if_neg hcond, smul_zero]
     by_cases hlhs : (idx 0 + 1) + idx 1 = k ∧ idx 0 + 1 ≥ 0
     · rw [if_pos hlhs]
@@ -236,17 +230,14 @@ theorem deriv_snd_expansion_iwz (k : ℤ) :
     simp only [zsmul_eq_mul, smul_eq_mul, ← Int.cast_neg, ← Int.cast_mul]
     congr 1
     have hm : (↑((idx 0).toNat) : ℤ) = idx 0 := Int.toNat_of_nonneg hcond.2
-    have h_key := intBinomial_mul_sub k (idx 0).toNat
-    have h_sign := neg_one_pow_natAbs_succ ((k - 1) - idx 0)
-    have h_sign' : ((-1 : ℤ) ^ (k - idx 0).natAbs) = -((-1 : ℤ) ^ ((k - 1) - idx 0).natAbs) := by
-      convert h_sign using 2; omega
+    have h_eq : idx 1 + 1 = k - ↑((idx 0).toNat) := by omega
+    have h_sign : ((-1 : ℤ) ^ (k - idx 0).natAbs) = -((-1 : ℤ) ^ ((k - 1) - idx 0).natAbs) := by
+      convert neg_one_pow_natAbs_succ ((k - 1) - idx 0) using 2; omega
     calc (idx 1 + 1) * (intBinomial k (idx 0).toNat * (-1) ^ (k - idx 0).natAbs)
-        = (k - ↑((idx 0).toNat)) * (intBinomial k (idx 0).toNat * (-1) ^ (k - idx 0).natAbs) := by
-          congr 1; omega
-      _ = ((k - ↑((idx 0).toNat)) * intBinomial k (idx 0).toNat) * (-1) ^ (k - idx 0).natAbs := by ring
-      _ = (k * intBinomial (k - 1) (idx 0).toNat) * (-1) ^ (k - idx 0).natAbs := by rw [h_key]
-      _ = (k * intBinomial (k - 1) (idx 0).toNat) * (-((-1) ^ ((k - 1) - idx 0).natAbs)) := by rw [h_sign']
-      _ = -k * (intBinomial (k - 1) (idx 0).toNat * (-1) ^ ((k - 1) - idx 0).natAbs) := by ring
+        = ((k - ↑((idx 0).toNat)) * intBinomial k (idx 0).toNat) *
+          (-1) ^ (k - idx 0).natAbs := by rw [h_eq]; ring
+      _ = -k * (intBinomial (k - 1) (idx 0).toNat * (-1) ^ ((k - 1) - idx 0).natAbs) := by
+          rw [intBinomial_mul_sub k, h_sign]; ring
   · rw [if_neg (by omega : ¬(idx 0 + (idx 1 + 1) = k ∧ idx 0 ≥ 0)), if_neg hcond]
     simp [smul_zero]
 
@@ -271,9 +262,7 @@ theorem expansion_izw_eq_iwz_of_nonneg (k : ℕ) :
         rw [h_sign]
         congr 1
         -- intBinomial ↑k m = ↑(Nat.choose k m) for natural k
-        have h1 : intBinomial (↑k) (idx 1).toNat = ↑(Nat.choose k (idx 1).toNat) := rfl
-        have h2 : intBinomial (↑k) (idx 0).toNat = ↑(Nat.choose k (idx 0).toNat) := rfl
-        rw [h1, h2]
+        rw [intBinomial_natCast, intBinomial_natCast]
         congr 1
         have hsym := Nat.choose_symm (show (idx 1).toNat ≤ k by omega)
         rw [show k - (idx 1).toNat = (idx 0).toNat from by omega] at hsym
@@ -281,15 +270,13 @@ theorem expansion_izw_eq_iwz_of_nonneg (k : ℕ) :
       · -- idx 0 < 0, so idx 1 > k: Nat.choose k m = 0 for m > k
         push_neg at hn
         rw [if_pos ⟨hsum, hm⟩, if_neg (by intro ⟨_, h⟩; exact absurd h (by omega))]
-        have h1 : intBinomial (↑k) (idx 1).toNat = ↑(Nat.choose k (idx 1).toNat) := rfl
-        rw [h1, Nat.choose_eq_zero_of_lt (by omega : k < (idx 1).toNat)]
+        rw [intBinomial_natCast, Nat.choose_eq_zero_of_lt (by omega : k < (idx 1).toNat)]
         simp
     · push_neg at hm
       by_cases hn : idx 0 ≥ 0
       · -- idx 1 < 0, so idx 0 > k: Nat.choose k n = 0 for n > k
         rw [if_neg (by intro ⟨_, h⟩; exact absurd h (by omega)), if_pos ⟨hsum, hn⟩]
-        have h2 : intBinomial (↑k) (idx 0).toNat = ↑(Nat.choose k (idx 0).toNat) := rfl
-        rw [h2, Nat.choose_eq_zero_of_lt (by omega : k < (idx 0).toNat)]
+        rw [intBinomial_natCast, Nat.choose_eq_zero_of_lt (by omega : k < (idx 0).toNat)]
         simp
       · -- Both negative: impossible since sum = k ≥ 0
         push_neg at hn; omega

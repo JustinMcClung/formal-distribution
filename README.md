@@ -23,7 +23,7 @@ Requires Lean 4 (v4.28.0-rc1) with Mathlib.
 
 ```bash
 lake exe cache get   # fetch Mathlib oleans
-lake build           # 1398 jobs, 0 errors
+lake build           # 1491 jobs, 0 errors
 ```
 
 ## File Structure
@@ -31,20 +31,20 @@ lake build           # 1398 jobs, 0 errors
 ```
 FormalDistribution.lean                 -- root re-export
 FormalDistribution/
-  Basic.lean            (462 lines)     -- core types, Zero/Add/Neg/Sub/SMul instances
+  Basic.lean            (456 lines)     -- core types, embeddings, Zero/Add/Neg/Sub/SMul
   Deriv.lean            (181 lines)     -- formal derivatives
-  Mul.lean              (955 lines)     -- 1D/2D multiplication, ring axioms
+  Mul.lean              (718 lines)     -- 1D/2D multiplication, ring axioms
   Fourier.lean          (231 lines)     -- Fourier expansion, modes, residue
-  Binomial.lean         (195 lines)     -- extended/generalized binomial coefficients
-  Expansion.lean        (298 lines)     -- expansion operators i_{z,w}, i_{w,z}, Remark 1.2.4
-  Delta.lean            (559 lines)     -- formal delta, all 7 properties, swap symmetry
+  Binomial.lean          (80 lines)     -- generalized binomial via Mathlib Ring.choose
+  Expansion.lean        (285 lines)     -- expansion operators i_{z,w}, i_{w,z}, Remark 1.2.4
+  Delta.lean            (540 lines)     -- formal delta, all 7 properties, swap symmetry
   HahnSeries.lean       (271 lines)    -- bridge to Mathlib HahnSeries, CommRing instance
-  Decomposition.lean    (231 lines)    -- Proposition 1.3.6: decomposition theorem
-  Locality.lean         (440 lines)    -- Section 1.4: locality, commutator, j-th product
-  FourierTransform.lean (224 lines)    -- Section 1.5: Fourier transform, lambda-bracket
+  Decomposition.lean    (357 lines)    -- Proposition 1.3.6: decomposition theorem
+  Locality.lean         (479 lines)    -- Section 1.4: locality, commutator, j-th product
+  FourierTransform.lean (255 lines)    -- Section 1.5: Fourier transform, lambda-bracket
 ```
 
-**4088 lines total. 0 axioms. 0 sorry. 0 admits.**
+**3853 lines total. 0 axioms. 0 sorry. 0 admits.**
 
 ## Mathematical Content
 
@@ -60,14 +60,14 @@ FormalDistribution/
 ### Section 1.2 -- Expansion Operators
 
 - `fourierExpansion`, `fourierMode`, `residue`
-- `Int.extChoose` -- extended binomial coefficient for integers
-- `intBinomial` -- integer-valued generalized binomial with Pascal's rule
+- `intBinomial` -- integer-valued generalized binomial via Mathlib's `Ring.choose`
 - `expansion_izw`, `expansion_iwz` -- expansion operators
 - Remark 1.2.4: `expansion_izw_eq_iwz_of_nonneg` -- both operators agree for non-negative exponents
 
 ### Section 1.3 -- Formal Delta
 
-- `formalDelta : GenFormalDist2 A`
+- `formalDeltaPair {n} (i j : Fin n) (hij)` -- n-variable formal delta for any pair
+- `formalDelta : GenFormalDist2 A` -- 2-variable alias
 - Proposition 1.3.4: `formalDelta_eq_expansion_izw_sub_iwz`
 - All 7 properties from Proposition 1.3.5:
   1. `mul_z_sub_w_pow_succ_iteratedDeriv_formalDelta_eq_zero` -- (z-w)^{n+1} d^n delta = 0
@@ -77,19 +77,21 @@ FormalDistribution/
   5. `embedFst_mulGen_formalDelta_eq_embedSnd` -- a(z) delta = a(w) delta
   6. `residueAt_embedFst_mulGen_formalDelta` -- Res_z a(z) delta = a(w)
   7. `mul_z_sub_w_pow_iteratedDeriv_formalDelta` -- falling factorial identity
-- Proposition 1.3.6: `decomposition_theorem` -- if (z-w)^N f = 0 then f decomposes as
-  a finite sum involving generalized binomial coefficients (no `[Algebra ℚ A]` needed)
+- `decomposition_theorem_pair` -- n-variable decomposition: if (x_i - x_j)^N f = 0
+  then f decomposes as a finite sum involving generalized binomial coefficients
+- `decomposition_theorem` -- 2-variable alias (no `[Algebra ℚ A]` needed)
 
 ### Section 1.4 -- Locality
 
+- `IsLocalForPairOfOrder`, `IsLocalForPair` -- n-variable locality for any pair (i, j)
+- `IsLocal`, `IsLocalOfOrder`, `MutuallyLocal` -- 2-variable aliases (Definition 1.4.1)
 - `externalProduct` -- tensor product a(z)b(w) of two 1D distributions
 - `formalCommutator` -- commutator [a(z), b(w)] = a(z)b(w) - b(w)a(z)
-- `IsLocal`, `IsLocalOfOrder`, `MutuallyLocal` -- locality definitions (Definition 1.4.1)
 - `formalDelta_isLocal` -- delta is local with N = 1 (Example 1.4.2)
 - `iteratedDeriv_formalDelta_isLocal` -- d^n delta is local with N = n + 1 (Example 1.4.2)
 - `isLocal_deriv_snd` -- derivatives of local distributions are local
 - `commRing_mutuallyLocal` -- all pairs are mutually local over CommRing
-- `nthProduct` -- j-th product a_{(j)} b (Remark 1.4.4)
+- `nthProductAt` -- n-variable j-th product; `nthProduct` is the 2-variable alias
 - `local_decomposition` -- decomposition for local distributions (Theorem 1.4.3)
 - `leibniz_deriv_fst_coeff2` -- Leibniz rule for z-derivative and (z-w)^j
 - `integration_by_parts` -- Res_z (z-w)^{j+1} d_z f = -(j+1) Res_z (z-w)^j f
@@ -99,10 +101,11 @@ FormalDistribution/
 - `fourierTransformCoeff` -- n-th coefficient (1/n!)·a_n of F_z^λ(a) (Definition 1.5.1)
 - `fourierTransformCoeff_deriv` -- F(∂a)_n = -F(a)_{n-1} (Proposition 1.5.2)
 - `reflect`, `fourierTransformCoeff_reflect` -- F(a(-z)) = -F(-λ,a) (Proposition 1.5.2(3))
-- `twoVarFourierCoeff` -- j-th coefficient of two-variable FT (Definition 1.5.3)
+- `twoVarFourierCoeffAt` -- n-variable FT coefficient for any pair (i, j)
+- `twoVarFourierCoeff` -- 2-variable alias (Definition 1.5.3)
 - `twoVarFourierCoeff_commutator_eq` -- lambda-bracket = (1/j!)·a_{(j)}b (Proposition 1.5.4)
 - `twoVarFourierCoeff_deriv_fst` -- F(∂_z f)_{j+1} = -F(f)_j (Proposition 1.5.4(2))
-- `twoVarFourierCoeff_eq_zero_of_local` -- lambda-bracket is polynomial for local distributions
+- `twoVarFourierCoeffAt_eq_zero_of_local` -- lambda-bracket is polynomial for local distributions
 
 ### Hahn Series Bridge
 
@@ -123,11 +126,12 @@ example : Type _ := FormalDist1 C
 -- Fourier expansion extracts coefficients
 example : FormalDist1 C -> (Z -> C) := fourierExpansion
 
--- Extended binomial coefficient
-example : Z -> N -> Q := Int.extChoose
-
 -- Formal delta distribution
 noncomputable example : GenFormalDist2 C := formalDelta
+
+-- N-variable locality: delta in variables (i, j) of an n-variable expression
+noncomputable example {n : ℕ} (i j : Fin n) (hij : i ≠ j) :
+    GeneralizedFormalDistribution C n := formalDeltaPair i j hij
 
 -- Convert to Mathlib's HahnSeries
 noncomputable example (a : FormalDist1 C) : HahnSeries Z C :=
@@ -146,12 +150,33 @@ Two structure types handle the finite-vs-infinite support tension:
 
 All multiplication and ring axiom proofs are completely axiom-free.
 
+Locality, delta, decomposition, j-th products, and Fourier coefficients are defined
+for an arbitrary pair of variables `(i, j)` in an `n`-variable distribution. The
+classic 2-variable API (`formalDelta`, `IsLocal`, `nthProduct`, etc.) is recovered
+via `abbrev` aliases at `n = 2, i = 0, j = 1`, so all existing code continues to work.
+
 ## Mathlib Compatibility
 
 The library follows mathlib conventions: snake_case naming, `@[ext]`/`@[simp]`
 attributes, docstrings on all public declarations, `open scoped BigOperators`,
 minimal imports per file. The Hahn Series bridge enables interoperability with
 `Mathlib.Algebra.Vertex.VertexOperator`.
+
+## Acknowledgments
+
+Dr. Scott Carnahan reviewed an earlier version and suggested three improvements that
+shaped the current design:
+
+1. **Mathlib `BinomialRing` API** -- The custom 195-line binomial module was replaced
+   by Mathlib's `Ring.choose`, reducing `Binomial.lean` to ~80 lines.
+2. **Proof conciseness** -- Verbose proofs across `Mul.lean`, `Delta.lean`,
+   `Expansion.lean`, and `Decomposition.lean` were compressed by factoring shared
+   patterns and eliminating redundant case analysis.
+3. **N-variable locality** -- Locality, delta, decomposition, j-th products, and
+   Fourier coefficients were generalized from 2-variable to arbitrary pairs
+   `(i, j)` in an `n`-variable distribution, supporting downstream results such as
+   Lemma 1.5.4 / Corollary 2.4.2 of Matsuo--Nagatomo. Backward-compatible `abbrev`
+   aliases preserve the original 2-variable API.
 
 ## References
 
