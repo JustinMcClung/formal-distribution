@@ -29,19 +29,19 @@ lake build           # 1491 jobs, 0 errors
 ## File Structure
 
 ```
-FormalDistribution.lean                 -- root re-export
+FormalDistribution.lean                  -- root re-export
 FormalDistribution/
-  Basic.lean            (456 lines)     -- core types, embeddings, Zero/Add/Neg/Sub/SMul
-  Deriv.lean            (181 lines)     -- formal derivatives
-  Mul.lean              (718 lines)     -- 1D/2D multiplication, ring axioms
-  Fourier.lean          (231 lines)     -- Fourier expansion, modes, residue
-  Binomial.lean          (80 lines)     -- generalized binomial via Mathlib Ring.choose
-  Expansion.lean        (285 lines)     -- expansion operators i_{z,w}, i_{w,z}, Remark 1.2.4
-  Delta.lean            (540 lines)     -- formal delta, all 7 properties, swap symmetry
-  HahnSeries.lean       (271 lines)    -- bridge to Mathlib HahnSeries, CommRing instance
-  Decomposition.lean    (357 lines)    -- Proposition 1.3.6: decomposition theorem
-  Locality.lean         (479 lines)    -- Section 1.4: locality, commutator, j-th product
-  FourierTransform.lean (255 lines)    -- Section 1.5: Fourier transform, lambda-bracket
+  Basic.lean             (456 lines)    -- core types, embeddings, Zero/Add/Neg/Sub/SMul
+  Deriv.lean             (181 lines)    -- formal derivatives
+  Mul.lean               (718 lines)    -- 1D/2D multiplication, ring axioms
+  Fourier.lean           (231 lines)    -- Fourier expansion, modes, residue
+  Binomial.lean           (80 lines)    -- generalized binomial via Mathlib Ring.choose
+  Expansion.lean         (285 lines)    -- expansion operators i_{z,w}, i_{w,z}, Remark 1.2.4
+  Delta.lean             (540 lines)    -- formal delta, all 7 properties, swap symmetry
+  HahnSeries.lean        (271 lines)    -- bridge to Mathlib HahnSeries, CommRing instance
+  Decomposition.lean     (357 lines)    -- Proposition 1.3.6: decomposition theorem
+  Locality.lean          (479 lines)    -- Section 1.4: locality, commutator, j-th product
+  FourierTransform.lean  (255 lines)    -- Section 1.5: Fourier transform, lambda-bracket
 ```
 
 **3853 lines total. 0 axioms. 0 sorry. 0 admits.**
