@@ -1,4 +1,4 @@
-# FormalDistribution -- Lean 4 Formalization of Formal Calculus
+# FormalDistribution - Lean 4 Formalization of Formal Calculus
 
 An axiom-free Lean 4 formalization of **Chapter 1: Formal Calculus** from
 Nozaradan's *Introduction to Vertex Algebras*, structured as a mathlib-compatible library
